@@ -27,6 +27,12 @@ pub fn is_sixty_four_byte_mutation(txs: &[Tx]) -> bool {
             .any(|tx| tx.base_size() == MERKLE_NODE_SERIALIZED_SIZE)
 }
 
+/// Research activation applies only to isolated regtest networks in an opt-in build.
+#[must_use]
+pub const fn experimental_muladdmod_active(network: Network) -> bool {
+    cfg!(feature = "experimental-muladdmod-regtest") && matches!(network, Network::Regtest)
+}
+
 #[must_use]
 pub fn verify_flags(
     network: Network,
@@ -56,6 +62,12 @@ pub fn verify_flags(
     }
     if network.is_taproot_active(height) {
         flags = flags.union(VerifyFlags::TAPROOT);
+    }
+    if experimental_muladdmod_active(network)
+        && flags.contains(VerifyFlags::WITNESS)
+        && flags.contains(VerifyFlags::TAPROOT)
+    {
+        flags = flags.union(VerifyFlags::EXPERIMENTAL_MULADDMOD);
     }
     flags
 }

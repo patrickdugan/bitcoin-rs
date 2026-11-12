@@ -141,6 +141,7 @@ mod kernel_backend {
         input_index: usize,
         flags: VerifyFlags,
     ) -> Result<(), ConsensusError> {
+        super::ensure_flags_supported(crate::ValidationEngine::Kernel, flags)?;
         let script =
             bitcoinkernel::ScriptPubkey::new(&prevout.script_pubkey).map_err(map_kernel_error)?;
         let amount = i64::try_from(prevout.value.to_sat())
@@ -302,6 +303,16 @@ pub(crate) fn verify_prepared_input(
     }
 }
 
+fn ensure_flags_supported(
+    engine: ValidationEngine,
+    flags: VerifyFlags,
+) -> Result<(), ConsensusError> {
+    if engine == ValidationEngine::Kernel && flags.contains(VerifyFlags::EXPERIMENTAL_MULADDMOD) {
+        return Err(ConsensusError::UnsupportedEngine { engine });
+    }
+    Ok(())
+}
+
 pub fn verify_tx_scripts(
     tx: &Tx,
     spent_outputs: &[(OutPoint, TxOut)],
@@ -309,6 +320,7 @@ pub fn verify_tx_scripts(
     engine: ValidationEngine,
     signature_cache: Option<&bitcoin_rs_script::SignatureCache>,
 ) -> Result<(), ConsensusError> {
+    ensure_flags_supported(engine, flags)?;
     match engine {
         ValidationEngine::Native => {
             let prepared = bitcoin_rs_script::PreparedTransaction::new(tx, spent_outputs)?;
@@ -352,6 +364,21 @@ mod tests {
     use bitcoin_rs_primitives::{BlockPayload, Network};
 
     use super::*;
+
+    #[test]
+    fn experimental_flags_cannot_be_silently_stripped_by_the_kernel() {
+        let flag = VerifyFlags::EXPERIMENTAL_MULADDMOD;
+        assert!(super::ensure_flags_supported(ValidationEngine::Native, flag).is_ok());
+        assert!(matches!(
+            super::ensure_flags_supported(ValidationEngine::Kernel, flag),
+            Err(ConsensusError::UnsupportedEngine {
+                engine: ValidationEngine::Kernel
+            })
+        ));
+        assert!(
+            super::ensure_flags_supported(ValidationEngine::Kernel, VerifyFlags::MANDATORY).is_ok()
+        );
+    }
 
     #[test]
     fn block_preparation_rejects_misordered_prevout_identities() {

@@ -864,3 +864,33 @@ fn is_coinbase_detects_null_prevout() {
     assert!(!witness_spend_tx().is_coinbase());
     assert!(!spend_tx(1, Vec::new()).is_coinbase());
 }
+
+#[test]
+fn muladdmod_activation_requires_the_research_build_and_regtest() {
+    for network in [
+        Network::Mainnet,
+        Network::Testnet3,
+        Network::Testnet4,
+        Network::Signet,
+        Network::Regtest,
+    ] {
+        let expected =
+            cfg!(feature = "experimental-muladdmod-regtest") && network == Network::Regtest;
+        assert_eq!(super::experimental_muladdmod_active(network), expected);
+        for segwit_active in [false, true] {
+            let flags = verify_flags(
+                network,
+                3_000_000,
+                Hash256::from_le_bytes(&[0; 32]),
+                SoftforkState {
+                    csv_active: true,
+                    segwit_active,
+                },
+            );
+            assert_eq!(
+                flags.contains(VerifyFlags::EXPERIMENTAL_MULADDMOD),
+                expected && segwit_active
+            );
+        }
+    }
+}

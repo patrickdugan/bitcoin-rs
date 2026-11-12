@@ -15,6 +15,7 @@ autobenches = false
 workspace = true
 
 [features]
+experimental-muladdmod-regtest = ["bitcoin-rs-mempool/experimental-muladdmod-regtest"]
 
 # Exposes the internal `NodeState` composition root to integration tests and
 # benchmarks. Production embedders use the typed `Node` surface instead.

@@ -3,6 +3,8 @@
 mod checker;
 mod eval;
 mod interpreter;
+#[cfg(feature = "experimental-muladdmod")]
+mod muladdmod;
 mod script;
 mod signature_cache;
 pub mod sigops;

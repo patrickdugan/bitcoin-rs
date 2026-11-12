@@ -19,6 +19,7 @@ workspace = true
 # toolchain (`cmake`, `libboost`); enable `kernel` explicitly for the
 # bitcoinkernel backend. See docs/contracts/validation-default.md.
 default = []
+experimental-muladdmod-regtest = ["bitcoin-rs-script/experimental-muladdmod"]
 kernel = ["dep:bitcoinkernel"]
 # Emits SystemTap/DTrace USDT probes with Bitcoin Core's provider names and
 # argument layout (crate-root `probes.d`, module `trace`). Off by default:

@@ -14,6 +14,7 @@ workspace = true
 
 [features]
 default = []
+experimental-muladdmod = []
 kernel = ["bitcoin-rs-consensus/kernel"]
 
 

@@ -2761,3 +2761,55 @@ fn expire_returns_none_when_fresh_and_some_when_stale() {
     );
     assert!(gateway.expire(AdmissionOrigin::Rpc, now).is_none());
 }
+
+#[cfg(feature = "experimental-muladdmod-regtest")]
+#[test]
+fn muladdmod_admission_uses_active_flags_and_caches_only_valid_spends() {
+    use bitcoin::secp256k1::{Keypair, Secp256k1, SecretKey};
+    use bitcoin::taproot::{LeafVersion, TaprootBuilder};
+    use bitcoin_rs_script::VerifyFlags;
+
+    for (claimed, accepted) in [(12, true), (11, false)] {
+        let cache = Arc::new(bitcoin_rs_consensus::ScriptExecutionCache::new());
+        let gateway = Arc::new(MempoolGateway::new(
+            Arc::new(RwLock::new(Mempool::new(MempoolLimits::default()))),
+            None,
+            ValidationEngine::Native,
+            Some(Arc::clone(&cache)),
+        ));
+        let secp = Secp256k1::new();
+        let key =
+            Keypair::from_secret_key(&secp, &SecretKey::from_slice(&[37; 32]).expect("test key"));
+        let leaf = bitcoin::ScriptBuf::from_bytes(vec![0xf0, 0x50 + claimed, 0x87]);
+        let tree = TaprootBuilder::new()
+            .add_leaf(0, leaf.clone())
+            .expect("leaf")
+            .finalize(&secp, key.x_only_public_key().0)
+            .expect("tree");
+        let mut candidate = standard_tx(claimed);
+        candidate.inputs[0].script_sig = Script::new();
+        candidate.inputs[0].witness = Witness::from_stack(vec![
+            vec![7],
+            vec![11],
+            vec![3],
+            vec![17],
+            leaf.to_bytes(),
+            tree.control_block(&(leaf, LeafVersion::TapScript))
+                .expect("control")
+                .serialize(),
+        ]);
+        let mut request = admit_request(&gateway, &candidate, AdmissionOrigin::Rpc);
+        request.prevouts[0].1.script_pubkey =
+            Script::from_bytes(bitcoin::ScriptBuf::new_p2tr_tweaked(tree.output_key()).to_bytes());
+        let flags = VerifyFlags::MANDATORY.union(VerifyFlags::EXPERIMENTAL_MULADDMOD);
+        request.next_block_script_flags = flags;
+        let outcome = gateway.admit_transaction(request);
+        assert_eq!(
+            matches!(outcome, Ok(AdmitOutcome::Committed(_))),
+            accepted,
+            "{outcome:?}"
+        );
+        assert_eq!(cache.take(candidate.wtxid(), flags), accepted);
+        assert!(!cache.take(candidate.wtxid(), VerifyFlags::MANDATORY));
+    }
+}
