@@ -1,6 +1,9 @@
 # Independent local Keyless CHECKSIG audit
 
-The runtime source is PR #2 at
+This document records the initial pinned audit. The subsequent runtime repair
+and current integration evidence are in [the integration repair report](keyless-checksig-integration-repair.md).
+
+The initial runtime source was PR #2 at
 `e616005407071dc1241bd17f891522f663cb1b34`, with tree
 `89dba8c8046b41bb3a9a494cb33995db8024414f`.
 This work uses a separate checkout. It does not use the OP_MULADDMOD branch.
@@ -131,7 +134,8 @@ The repair makes the shared helper record exits and reject nonzero status,
 including failure during final cleanup. The new campaign uses native Linux
 temporary node data and retains its logs in the Windows workspace. All final
 shutdown checks passed. The underlying Rust checkpoint behavior on `/mnt/c`
-was not repaired; native Linux data is the verified recipe.
+was not repaired during that initial phase. The follow-up repair report above
+records the later Rust repair and verified Windows-mount recipe.
 
 Four Python preflight subcases also exceeded their existing 10-second limits
 when Git scanned the Windows-mounted checkout. The same suite passed from a
@@ -155,11 +159,13 @@ provenance receipt, and the failed shutdown reproduction. `native-replays.json`
 records both final replay commands, bounds, exit codes, durations, and log hashes.
 Every recorded stage-log and fixture-receipt digest was checked.
 
-The original runtime source remained at its exact SHA. The audit repair lives
-on the separate local `audit/keyless-msi-e616005` branch. Existing unrelated
+At initial audit completion, the original runtime source remained at its exact
+SHA. The audit repair lives on the separate local `audit/keyless-msi-e616005`
+branch. Existing unrelated
 MULADDMOD checkouts were left untouched, and initial and final status receipts
-were retained. No branch was pushed, no PR was published or merged, and no
-experimental transaction was sent to a public network. No software installer
+were retained. During that initial phase, no branch was pushed, no PR was
+published or merged, and no experimental transaction was sent to a public
+network. No software installer
 or paid API was used.
 
 NUMS P2TR, P2MR, computation-proof application binding, activation, and cost
@@ -251,8 +257,8 @@ Recommitted fields demonstrate permitted transaction shapes, not a restriction
 on all transaction fields. These tools establish no general computation-proof
 application binding, BIP allocation, activation, or production cost calibration.
 
-There is no runtime synchronization change. The new tools call the existing RPC
-and fixture boundaries. The original staging lane owns the selected SYNC-04
+The initial audit tools made no runtime synchronization change. They call the
+existing RPC and fixture boundaries. The original staging lane owns the selected SYNC-04
 and SYNC-05 behavioral checks.
 
 ## Sources
