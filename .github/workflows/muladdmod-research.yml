@@ -2,7 +2,7 @@ name: MULADDMOD research build
 
 on:
   push:
-    branches: ['feat/experimental-muladdmod']
+    branches: ['feat/experimental-muladdaddmod', 'feat/experimental-muladdmod']
   pull_request:
     paths:
       - '.github/workflows/muladdmod-research.yml'
@@ -16,6 +16,10 @@ on:
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    shell: bash
 
 concurrency:
   group: muladdmod-${{ github.head_ref || github.ref_name }}
@@ -31,6 +35,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Record source and toolchain
         run: |
+          set -euo pipefail
           mkdir -p /tmp/muladdmod-tests
           git rev-parse HEAD > /tmp/muladdmod-tests/commit.txt
           rustc --version > /tmp/muladdmod-tests/toolchain.txt
@@ -47,6 +52,23 @@ jobs:
         run: cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-tests/node.txt
       - name: Valid-prefix rejection proof
         run: cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall,bitcoin-rs-consensus/experimental-muladdmod-regtest a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix 2>&1 | tee /tmp/muladdmod-tests/sync.txt
+      - name: Require test results and record counts
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, re
+          root = pathlib.Path('/tmp/muladdmod-tests')
+          result = {}
+          for name in ['flag-off', 'script', 'consensus', 'mempool', 'node', 'sync']:
+              text = re.sub(r'\x1b\[[0-9;]*m', '', (root / (name + '.txt')).read_text())
+              rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)
+              assert rows, (name, 'no successful test summary')
+              totals = [sum(int(row[i]) for row in rows) for i in range(3)]
+              assert totals[0] > 0 and totals[1:] == [0, 0], (name, totals)
+              assert 'error: could not compile' not in text, name
+              result[name] = dict(zip(['passed', 'failed', 'ignored'], totals))
+          (root / 'test-summary.json').write_text(json.dumps(result, indent=2) + '\n')
+          print(json.dumps(result, indent=2))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
