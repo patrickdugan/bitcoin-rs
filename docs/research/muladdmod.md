@@ -103,3 +103,10 @@ Sources:
 - Pinned source: 7f5ad9f95fce8c40919e360000ca86c7119ceb5c,
   BIPSpace/Bounded-Modular-Arithmetic/
 - BIP342: https://bips.dev/342/
+
+## Funded claim fixture
+
+The [authenticated claim dispute](muladdmod-dispute.md) exercises SHA256-bound
+operands, beneficiary-authorized recovery and delayed operator settlement
+through real regtest transactions. It also records the missed-window
+counterexample. Its admission and signature requirements remain explicit.
