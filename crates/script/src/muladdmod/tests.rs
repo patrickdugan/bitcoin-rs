@@ -64,7 +64,7 @@ fn maximum_width_carry_is_reduced_without_truncation() {
     let mut x = m;
     x[0] = 254;
     assert_eq!(
-        evaluate(&x, &x, &x, &m).expect("canonical"),
+        evaluate(&x, &x, &x, &m).expect("canonical").as_slice(),
         [0; 32].as_slice()
     );
     assert_eq!(evaluate(&x, &x, &[0; 32], &m).expect("canonical")[0], 1);
@@ -73,11 +73,15 @@ fn maximum_width_carry_is_reduced_without_truncation() {
 #[test]
 fn unsigned_high_bit_and_composite_modulus_have_integer_semantics() {
     assert_eq!(
-        evaluate(&[128], &[1], &[0], &[251]).expect("unsigned residue"),
+        evaluate(&[128], &[1], &[0], &[251])
+            .expect("unsigned residue")
+            .as_slice(),
         [128].as_slice()
     );
     assert_eq!(
-        evaluate(&[3], &[5], &[0], &[15]).expect("composite modulus"),
+        evaluate(&[3], &[5], &[0], &[15])
+            .expect("composite modulus")
+            .as_slice(),
         [0].as_slice()
     );
 }
