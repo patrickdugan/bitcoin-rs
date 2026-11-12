@@ -50,16 +50,15 @@ jobs:
                               state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
                               self.assertEqual(state, "Z")
           '''
-          lines = replacement.splitlines()
-          replacement = lines[0] + '\n' + '\n'.join(line[10:] for line in lines[1:])
           p.write_text(s[:a] + replacement + s[b:])
           PY
+          python3 -m py_compile scripts/tests/test_check_models.py
           cargo update -p rustix --precise 1.1.6
           cargo update --manifest-path fuzz/Cargo.toml -p rustix --precise 1.1.6
-          cargo update --manifest-path tools/template-provider/Cargo.toml -p rustix --precise 1.1.6
+          cargo update --manifest-path tools/stratum-sv2/template-provider/Cargo.toml -p rustix --precise 1.1.6
           python3 -m unittest discover -s scripts/tests -p 'test_check_models.py' -v
           git rm .github/workflows/muladdmod-maintenance-once.yml
-          git add Cargo.toml Cargo.lock fuzz/Cargo.lock tools/template-provider/Cargo.lock scripts/tests/test_check_models.py
+          git add Cargo.toml Cargo.lock fuzz/Cargo.lock tools/stratum-sv2/template-provider/Cargo.lock scripts/tests/test_check_models.py
           git diff --cached --check
           git config user.name 'Patrick Dugan'
           git config user.email '2466053+patrickdugan@users.noreply.github.com'
