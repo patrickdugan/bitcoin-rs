@@ -28,6 +28,8 @@ pub struct ArtifactDigest {
     pub bytes: u64,
     pub sha256: [u8; 32],
 }
+/// Exclusive directory creation reserves a generation. Its artifacts and directory
+/// entries must be synced before CURRENT or a durable-head reference selects it.
 pub struct CheckpointStage {
     pub(crate) root: CheckpointRoot,
     pub(crate) staging: Dir,
@@ -199,15 +201,6 @@ pub fn commit_publication(
     injected_io(failpoint, CheckpointFailpoint::StageSync)?;
     sync_dir(&staging)?;
     #[cfg(any(test, feature = "test-seam"))]
-    injected_io(failpoint, CheckpointFailpoint::GenerationRename)?;
-    #[cfg(any(
-        target_vendor = "apple",
-        target_os = "linux",
-        target_os = "android",
-        target_os = "redox"
-    ))]
-    super::fs::rename_noreplace(root.dir(), &paths.staging, &paths.final_dir)?;
-    #[cfg(any(test, feature = "test-seam"))]
     injected_io(failpoint, CheckpointFailpoint::GenerationRootSync)?;
     root.sync()?;
     let reference = super::CheckpointReference {
@@ -271,33 +264,13 @@ fn allocate_generation(
     })?;
     loop {
         let paths = generation_paths(generation);
-        #[cfg(any(
-            target_vendor = "apple",
-            target_os = "linux",
-            target_os = "android",
-            target_os = "redox"
-        ))]
-        if root.entry_exists(&paths.final_dir)? || root.entry_exists(&paths.current_temp)? {
+        if root.entry_exists(&paths.current_temp)? {
             generation = generation.checked_add(1).ok_or_else(|| {
                 CheckpointError::Invalid("checkpoint generation exhausted u64".to_owned())
             })?;
             continue;
         }
-        #[cfg(any(
-            target_vendor = "apple",
-            target_os = "linux",
-            target_os = "android",
-            target_os = "redox"
-        ))]
-        let name = &paths.staging;
-        #[cfg(not(any(
-            target_vendor = "apple",
-            target_os = "linux",
-            target_os = "android",
-            target_os = "redox"
-        )))]
-        let name = &paths.final_dir;
-        match root.create_dir(name) {
+        match root.create_dir(&paths.directory) {
             Ok(dir) => return Ok((generation, paths, dir)),
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 generation = generation.checked_add(1).ok_or_else(|| {
@@ -311,14 +284,6 @@ fn allocate_generation(
 fn generation_paths(generation: u64) -> GenerationPaths {
     let directory = generation_name(generation);
     GenerationPaths {
-        #[cfg(any(
-            target_vendor = "apple",
-            target_os = "linux",
-            target_os = "android",
-            target_os = "redox"
-        ))]
-        staging: format!(".{directory}.tmp"),
-        final_dir: directory.clone(),
         current_temp: format!(".CURRENT-{generation:020}.tmp"),
         directory,
     }
