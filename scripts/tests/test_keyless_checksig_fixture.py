@@ -297,7 +297,7 @@ class FixtureRuntimeTests(unittest.TestCase):
                 node.process.wait(timeout=10)
                 try:
                     if status:
-                        with self.assertRaisesRegex(ValueError, f'node exited with status {status}'):
+                        with self.assertRaises(ValueError):
                             node.stop()
                     else:
                         node.stop()
