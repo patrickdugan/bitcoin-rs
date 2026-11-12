@@ -358,3 +358,75 @@ fn preserved_witness_body_is_bound_before_commit_and_disconnect_keeps_exact_byte
     }
     Ok(())
 }
+
+#[test]
+fn invalidated_header_and_invalid_parent_cannot_validate_or_commit() -> TestResult {
+    let chain = handles(Network::Regtest, Arc::new(UtxoSet::new()));
+    let genesis = Network::Regtest.genesis_block();
+    let genesis_hash = genesis.block_hash().0;
+    chain.apply_block(&BlockPayload::from_local(genesis.clone()))?;
+    let invalid_child = witness_child(genesis.block_hash(), 1)?;
+    let invalid_hash = invalid_child.block_hash().0;
+    {
+        let mut tree = chain.block_tree.write();
+        let genesis_id = tree
+            .lookup(genesis_hash)
+            .ok_or(TestError::Missing("missing genesis"))?;
+        tree.insert_node(
+            Some(genesis_id),
+            invalid_child.header,
+            bitcoin_rs_chain::NodeStatus::Invalid,
+        )?;
+    }
+    let payload = BlockPayload::from_local(invalid_child);
+    assert!(matches!(
+        chain.validate_block(&payload),
+        Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::KnownInvalidHeader { hash }
+        )) if hash == invalid_hash
+    ));
+    assert!(matches!(
+        chain.apply_block(&payload),
+        Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::KnownInvalidHeader { hash }
+        )) if hash == invalid_hash
+    ));
+    assert_eq!(
+        chain
+            .applied_tip_snapshot()
+            .ok_or(TestError::Missing("missing tip"))?
+            .hash,
+        genesis_hash
+    );
+
+    let valid_child = regtest_fixture::mined_block_with_prev_hash(
+        genesis.block_hash(),
+        1,
+        vec![regtest_fixture::coinbase(1)],
+    )?;
+    let valid_child_hash = valid_child.block_hash().0;
+    chain.apply_block(&BlockPayload::from_local(valid_child.clone()))?;
+    let grandchild = witness_child(valid_child.block_hash(), 2)?;
+    let valid_child_id = {
+        let mut tree = chain.block_tree.write();
+        let id = tree
+            .lookup(valid_child_hash)
+            .ok_or(TestError::Missing("missing valid child"))?;
+        tree.invalidate_subtree(id)?;
+        id
+    };
+    let grandchild_payload = BlockPayload::from_local(grandchild);
+    assert!(matches!(
+        chain.validate_block(&grandchild_payload),
+        Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::InvalidParent { parent }
+        )) if parent == valid_child_id
+    ));
+    assert!(matches!(
+        chain.apply_block(&grandchild_payload),
+        Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::InvalidParent { parent }
+        )) if parent == valid_child_id
+    ));
+    Ok(())
+}

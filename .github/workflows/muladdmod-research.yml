@@ -2,18 +2,20 @@ name: MULADDMOD research build
 
 on:
   push:
-    branches: ['feat/experimental-muladdaddmod', 'feat/experimental-muladdmod']
+    branches: ['feat/experimental-muladdmod']
   pull_request:
     paths:
       - '.github/workflows/muladdmod-research.yml'
       - 'crates/script/**'
       - 'crates/consensus/**'
+      - 'crates/chainstate/**'
       - 'crates/mempool/**'
       - 'crates/node/**'
       - 'bin/bitcoin-rs/**'
       - 'scripts/research/muladdmod*.py'
-      - 'scripts/tests/test_muladdmod_claim.py'
-      - 'docs/research/muladdmod*.md'
+      - 'scripts/research/campaign/**'
+      - 'scripts/tests/test_muladdmod*.py'
+      - 'docs/research/muladdmod*'
       - 'Cargo.toml'
       - 'Cargo.lock'
 
@@ -44,7 +46,7 @@ jobs:
           rustc --version > /tmp/muladdmod-tests/toolchain.txt
           cargo fmt --all --check
       - name: Claim admission and official Schnorr vectors
-        run: python3 -m unittest discover -s scripts/tests -p 'test_muladdmod_claim.py' -v
+        run: python3 -m unittest discover -s scripts/tests -p 'test_muladdmod*.py' -v
       - name: Flag-off compatibility tests
         run: cargo test --locked -p bitcoin-rs-script 2>&1 | tee /tmp/muladdmod-tests/flag-off.txt
       - name: Arithmetic and complete Taproot witness tests

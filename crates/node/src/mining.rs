@@ -177,11 +177,11 @@ impl MiningCoordinator {
             Ok(lock) => lock,
             Err(error) => return map_apply_error(error),
         };
-        if matches!(
-            self.known_block_result(block_hash),
-            Some(BlockValidationResult::Duplicate)
-        ) {
-            return Ok(BlockValidationResult::Duplicate);
+        if let Some(
+            known @ (BlockValidationResult::Duplicate | BlockValidationResult::DuplicateInvalid),
+        ) = self.known_block_result(block_hash)
+        {
+            return Ok(known);
         }
 
         let mempool_change = match self.followers.begin_mempool_change() {
@@ -205,6 +205,55 @@ impl MiningCoordinator {
                 Ok(BlockValidationResult::Accepted)
             }
             Err(ConnectMutationError::NotCommitted(error)) => map_apply_error(error),
+        }
+    }
+
+    fn skip_known_nonces(
+        &self,
+        block: &mut Block,
+        mut remaining: u64,
+        max_tries: u64,
+    ) -> Result<u64, MiningControlError> {
+        while remaining > 0 {
+            if self
+                .known_block_result(block.header.compute_hash().into())
+                .is_none()
+            {
+                return Ok(remaining);
+            }
+            block.header.nonce = block.header.nonce.wrapping_add(1);
+            remaining -= 1;
+        }
+        Err(MiningControlError::Failed(CompactString::from(
+            bitcoin_rs_mining::MiningError::Unsolved { tries: max_tries }.to_string(),
+        )))
+    }
+
+    fn solve_fresh_block(
+        &self,
+        block: &mut Block,
+        remaining: &mut u64,
+        max_tries: u64,
+    ) -> Result<(), MiningControlError> {
+        loop {
+            if *remaining == 0 {
+                return Err(MiningControlError::Failed(CompactString::from(
+                    bitcoin_rs_mining::MiningError::Unsolved { tries: max_tries }.to_string(),
+                )));
+            }
+            let chunk = (*remaining).min(u64::from(u32::MAX));
+            let start_nonce = block.header.nonce;
+            solve_block(block, chunk).map_err(|error| {
+                MiningControlError::Failed(CompactString::from(error.to_string()))
+            })?;
+            let tries_used = u64::from(block.header.nonce.wrapping_sub(start_nonce))
+                .saturating_add(1)
+                .min(chunk);
+            *remaining = remaining.saturating_sub(tries_used);
+            if self.known_block_result(block.block_hash().into()).is_none() {
+                return Ok(());
+            }
+            block.header.nonce = block.header.nonce.wrapping_add(1);
         }
     }
 }
@@ -525,6 +574,8 @@ impl MiningControl for MiningCoordinator {
             let mut block = candidate.into_unsolved_block().map_err(|error| {
                 MiningControlError::Failed(CompactString::from(error.to_string()))
             })?;
+            let mut remaining_tries =
+                self.skip_known_nonces(&mut block, request.max_tries, request.max_tries)?;
             if matches!(request.selection, GenerateSelection::Ordered(_)) {
                 let payload = BlockPayload::from_local(block);
                 self.chainstate
@@ -532,9 +583,7 @@ impl MiningControl for MiningCoordinator {
                     .map_err(|error| test_block_validity_error(&error))?;
                 block = payload.into_block();
             }
-            solve_block(&mut block, request.max_tries).map_err(|error| {
-                MiningControlError::Failed(CompactString::from(error.to_string()))
-            })?;
+            self.solve_fresh_block(&mut block, &mut remaining_tries, request.max_tries)?;
             let hash = block.block_hash();
             if request.submit {
                 let payload = BlockPayload::from_local(block);
