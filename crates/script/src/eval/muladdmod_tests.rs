@@ -60,3 +60,17 @@ fn signatures_and_arithmetic_debit_one_counter() {
         })
     );
 }
+
+#[test]
+fn three_item_stack_underflow_precedes_budget_exhaustion() {
+    let script = [OP_DROP, OP_MULADDMOD_EXPERIMENTAL];
+    let (result, left, stack) = run(Some(49), &script);
+    assert_eq!(
+        result,
+        Err(ScriptError::Invalid {
+            code: ScriptErrCode::InvalidStackOperation
+        })
+    );
+    assert_eq!(left, Some(49));
+    assert_eq!(stack.len(), 3);
+}

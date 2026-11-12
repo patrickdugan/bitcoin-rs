@@ -1783,3 +1783,86 @@ fn flip_first_byte(witness: &Witness, item: usize) -> Witness {
     stack[item][0] ^= 0x01;
     Witness::from_stack(stack)
 }
+
+/// Activation boundary differential: adding `EXPERIMENTAL_MULADDMOD` to the
+/// flags of every Bitcoin Core vector (legacy, P2SH, witness v0 and taproot)
+/// must not change any verdict or error code, because 0xf0 only changes
+/// meaning inside tapscript.
+#[cfg(feature = "experimental-muladdmod")]
+#[test]
+fn activating_muladdmod_preserves_every_core_vector_verdict() {
+    let experimental = VerifyFlags::EXPERIMENTAL_MULADDMOD;
+    let mut counts = Counts::default();
+    let rows = load_script_tests(&mut counts).unwrap_or_else(|e| panic!("script_tests: {e}"));
+    let mut compared = 0_usize;
+    let mut taproot_with_0xf0 = 0_usize;
+    let is_p2tr = |spk: &[u8]| spk.len() == 34 && spk[0] == 0x51 && spk[1] == 0x20;
+    for row in &rows {
+        let credit = build_crediting_tx(&row.script_pubkey, row.amount);
+        let spend = build_spending_tx(&row.script_sig, &row.witness, &credit);
+        let prevouts = [credit.outputs[0].clone()];
+        let run = |flags: VerifyFlags| {
+            Interpreter.execute_with_prevouts(
+                &row.script_pubkey,
+                &row.script_sig,
+                &Witness::from_stack(row.witness.clone()),
+                flags,
+                &prevouts,
+                &spend,
+                0,
+            )
+        };
+        let off = run(row.flags);
+        let on = run(row.flags.union(experimental));
+        if is_p2tr(&row.script_pubkey) && row.witness.iter().any(|item| item.contains(&0xf0)) {
+            if on == Ok(true) {
+                assert_eq!(
+                    off,
+                    Ok(true),
+                    "soft-fork violation on row {}",
+                    row.row_index
+                );
+            }
+            taproot_with_0xf0 += 1;
+        } else {
+            assert_eq!(
+                off, on,
+                "script_tests row {} ({})",
+                row.row_index, row.comment
+            );
+            compared += 1;
+        }
+    }
+    for (name, accept) in [("tx_valid.json", true), ("tx_invalid.json", false)] {
+        let rows =
+            load_tx_vectors(name, accept, &mut counts).unwrap_or_else(|e| panic!("{name}: {e}"));
+        for row in &rows {
+            let prepared = PreparedTransaction::new(&row.tx, &row.prevouts)
+                .unwrap_or_else(|e| panic!("{name} row {}: {e}", row.row_index));
+            for (input, (_, prevout)) in row.prevouts.iter().enumerate() {
+                let off = prepared.verify_input(input, row.flags, None);
+                let on = prepared.verify_input(input, row.flags.union(experimental), None);
+                let has_0xf0 = row.tx.inputs[input]
+                    .witness
+                    .iter()
+                    .any(|item| item.contains(&0xf0));
+                if is_p2tr(prevout.script_pubkey.as_slice()) && has_0xf0 {
+                    if on == Ok(true) {
+                        assert_eq!(off, Ok(true), "soft-fork violation in {name}");
+                    }
+                    taproot_with_0xf0 += 1;
+                } else {
+                    assert_eq!(off, on, "{name} row {} input {input}", row.row_index);
+                    compared += 1;
+                }
+            }
+        }
+    }
+    println!(
+        "compared {compared} Core vector evaluations (plus {taproot_with_0xf0} P2TR-with-0xf0 soft-fork checks)"
+    );
+    assert!(
+        compared > 1_300,
+        "too few Core vector evaluations: {compared}"
+    );
+}

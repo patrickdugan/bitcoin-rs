@@ -38,3 +38,7 @@ bitcoin-rs-consensus = { workspace = true }
 [[test]]
 name = "suite"
 path = "tests/suite.rs"
+
+[[example]]
+name = "muladdmod_cost"
+required-features = ["experimental-muladdmod"]

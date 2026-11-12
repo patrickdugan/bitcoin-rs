@@ -302,4 +302,341 @@ mod active {
             error(ScriptErrCode::WitnessMalleated)
         );
     }
+
+    mod dispute_properties {
+        //! Property-based verification of the funded arithmetic dispute
+        //! contract invariants (Safety, Completeness, Replay isolation) across
+        //! random canonical claims of widths 1..=32.
+        use bitcoin::hashes::{Hash as _, sha256};
+        use bitcoin::secp256k1::{Keypair, Message, Secp256k1, SecretKey, XOnlyPublicKey};
+        use bitcoin::sighash::{Prevouts, SighashCache, TapSighashType};
+        use bitcoin::taproot::{LeafVersion, TapLeafHash, TaprootBuilder};
+        use bitcoin::{ScriptBuf, Transaction};
+        use bitcoin_rs_primitives::{Amount, Script, Tx, TxOut, deserialize};
+        use bitcoin_rs_script::opcode::OP_MULADDMOD_EXPERIMENTAL as OP;
+        use bitcoin_rs_script::{ScriptErrCode, VerifyFlags};
+        use proptest::prelude::*;
+
+        use super::{error, flags, verify};
+
+        const NUMS_HEX: [u8; 32] = [
+            0x50, 0x92, 0x9b, 0x74, 0xc1, 0xa0, 0x49, 0x54, 0xb7, 0x8b, 0x4b, 0x60, 0x35, 0xe9,
+            0x7a, 0x5e, 0x07, 0x8a, 0x5a, 0x0f, 0x28, 0xec, 0x96, 0xd5, 0x47, 0xbf, 0xee, 0x9a,
+            0xce, 0x80, 0x3a, 0xc0,
+        ];
+
+        fn push_minimal(out: &mut Vec<u8>, data: &[u8]) {
+            if data.is_empty() {
+                out.push(0x00);
+                return;
+            }
+            if data.len() == 1 {
+                let b = data[0];
+                if (1..=16).contains(&b) {
+                    out.push(0x50 + b);
+                    return;
+                }
+                if b == 0x81 {
+                    out.push(0x4f);
+                    return;
+                }
+            }
+            let len = data.len();
+            if let Ok(short) = u8::try_from(len) {
+                if len <= 75 {
+                    out.push(short);
+                } else {
+                    out.push(0x4c);
+                    out.push(short);
+                }
+            }
+            out.extend_from_slice(data);
+        }
+
+        fn dispute_leaf(
+            instance: &[u8; 32],
+            values: &[Vec<u8>; 4],
+            modulus: &[u8],
+            delay: u8,
+            recovery_x: &[u8; 32],
+            operator_x: &[u8; 32],
+        ) -> Vec<u8> {
+            let mut s = Vec::new();
+            push_minimal(&mut s, instance);
+            s.extend_from_slice(&[0x75, 0x63]); // DROP IF
+            push_minimal(&mut s, recovery_x);
+            s.push(0xad); // CHECKSIGVERIFY
+            for v in values[1..].iter().rev() {
+                s.extend_from_slice(&[0x76, 0xa8]); // DUP SHA256
+                push_minimal(&mut s, sha256::Hash::hash(v).as_byte_array());
+                s.extend_from_slice(&[0x88, 0x6b]); // EQUALVERIFY TOALTSTACK
+            }
+            s.extend_from_slice(&[0x76, 0xa8]); // DUP SHA256
+            push_minimal(&mut s, sha256::Hash::hash(&values[0]).as_byte_array());
+            s.push(0x88); // EQUALVERIFY
+            s.extend_from_slice(&[0x6c, 0x6c]); // FROMALTSTACK FROMALTSTACK
+            push_minimal(&mut s, modulus);
+            s.push(OP);
+            s.extend_from_slice(&[0x6c, 0x87, 0x91, 0x67]); // FROMALTSTACK EQUAL NOT ELSE
+            push_minimal(&mut s, &[delay]);
+            s.extend_from_slice(&[0xb2, 0x75]); // CSV DROP
+            push_minimal(&mut s, operator_x);
+            s.extend_from_slice(&[0xac, 0x68]); // CHECKSIG ENDIF
+            s
+        }
+
+        fn build_claim_spend(
+            txid_tag: u8,
+            leaf_bytes: &[u8],
+            witness_prefix: &[Vec<u8>],
+            signer: &Keypair,
+            recover: bool,
+            delay: u8,
+        ) -> (Tx, TxOut) {
+            let secp = Secp256k1::new();
+            let internal = XOnlyPublicKey::from_slice(&NUMS_HEX).expect("BIP341 NUMS");
+            let leaf = ScriptBuf::from_bytes(leaf_bytes.to_vec());
+            let tree = TaprootBuilder::new()
+                .add_leaf(0, leaf.clone())
+                .expect("leaf")
+                .finalize(&secp, internal)
+                .expect("tree");
+            let control = tree
+                .control_block(&(leaf.clone(), LeafVersion::TapScript))
+                .expect("control");
+            let prev_btc = bitcoin::TxOut {
+                value: bitcoin::Amount::from_sat(200_000),
+                script_pubkey: ScriptBuf::new_p2tr_tweaked(tree.output_key()),
+            };
+            let seq = if recover {
+                bitcoin::Sequence::MAX
+            } else {
+                bitcoin::Sequence::from_consensus(u32::from(delay))
+            };
+            let mut tx = Transaction {
+                version: bitcoin::transaction::Version(2),
+                lock_time: bitcoin::absolute::LockTime::ZERO,
+                input: vec![bitcoin::TxIn {
+                    previous_output: bitcoin::OutPoint::new(
+                        bitcoin::Txid::from_byte_array([txid_tag; 32]),
+                        0,
+                    ),
+                    script_sig: ScriptBuf::new(),
+                    sequence: seq,
+                    witness: bitcoin::Witness::new(),
+                }],
+                output: vec![bitcoin::TxOut {
+                    value: bitcoin::Amount::from_sat(198_000),
+                    script_pubkey: ScriptBuf::new_p2wpkh(&bitcoin::WPubkeyHash::from_byte_array(
+                        [9; 20],
+                    )),
+                }],
+            };
+            let sighash = SighashCache::new(&tx)
+                .taproot_signature_hash(
+                    0,
+                    &Prevouts::All(std::slice::from_ref(&prev_btc)),
+                    None,
+                    Some((
+                        TapLeafHash::from_script(&leaf, LeafVersion::TapScript),
+                        0xffff_ffff,
+                    )),
+                    TapSighashType::Default,
+                )
+                .expect("sighash");
+            let sig = secp
+                .sign_schnorr_no_aux_rand(&Message::from_digest(sighash.to_byte_array()), signer);
+            let mut items = witness_prefix.to_vec();
+            items.push(sig.as_ref().to_vec());
+            items.push(if recover { vec![1] } else { Vec::new() });
+            items.push(leaf.to_bytes());
+            items.push(control.serialize());
+            tx.input[0].witness = bitcoin::Witness::from_slice(&items);
+            let native: Tx =
+                deserialize(&bitcoin::consensus::serialize(&tx)).expect("native decode");
+            let native_prev = TxOut {
+                value: Amount::from_sat(prev_btc.value.to_sat()),
+                script_pubkey: Script::from_bytes(prev_btc.script_pubkey.to_bytes()),
+            };
+            (native, native_prev)
+        }
+
+        fn canonical_modulus(width: usize, raw: &[u8; 32]) -> Vec<u8> {
+            let mut m = raw[..width].to_vec();
+            if let Some(last) = m.last_mut() {
+                if *last == 0 {
+                    *last = 1;
+                }
+            }
+            if width == 1 && m[0] < 2 {
+                m[0] = 2;
+            }
+            m
+        }
+
+        fn clamp_below(raw: &[u8; 32], m: &[u8]) -> Vec<u8> {
+            let mut x = raw[..m.len()].to_vec();
+            // Compare big-endian from top byte; if x >= m, clear/decrement top byte where m > 0
+            let ge = x
+                .iter()
+                .rev()
+                .zip(m.iter().rev())
+                .find(|(a, b)| a != b)
+                .is_none_or(|(a, b)| a > b);
+            if ge {
+                if let Some((idx, byte)) = m.iter().enumerate().rfind(|(_, b)| **b > 0) {
+                    x[idx] = byte - 1;
+                    for low in &mut x[..idx] {
+                        *low &= 0x7f;
+                    }
+                }
+            }
+            x
+        }
+
+        fn increment_mod(val: &[u8], m: &[u8]) -> Vec<u8> {
+            let mut out = val.to_vec();
+            let mut carry = 1_u16;
+            for b in &mut out {
+                let s = u16::from(*b) + carry;
+                *b = u8::try_from(s & 0xff).unwrap_or(0);
+                carry = s >> 8;
+            }
+            if carry > 0 || out == m {
+                out.fill(0);
+            }
+            out
+        }
+
+        fn cases() -> ProptestConfig {
+            ProptestConfig {
+                cases: std::env::var("PROPTEST_CASES")
+                    .ok()
+                    .and_then(|value| value.parse().ok())
+                    .unwrap_or(512),
+                ..ProptestConfig::default()
+            }
+        }
+
+        proptest! {
+            #![proptest_config(cases())]
+
+            #[test]
+            fn canonical_dispute_safety_completeness_and_replay_isolation(
+                width in 1_usize..=32,
+                inst1 in any::<[u8; 32]>(),
+                inst2_xor in 1_u8..=255,
+                m_raw in any::<[u8; 32]>(),
+                a_raw in any::<[u8; 32]>(),
+                b_raw in any::<[u8; 32]>(),
+                c_raw in any::<[u8; 32]>(),
+            ) {
+                let secp = Secp256k1::new();
+                let rec_kp = Keypair::from_secret_key(&secp, &SecretKey::from_slice(&[3; 32]).expect("sk"));
+                let op_kp = Keypair::from_secret_key(&secp, &SecretKey::from_slice(&[5; 32]).expect("sk"));
+                let rec_x = rec_kp.x_only_public_key().0.serialize();
+                let op_x = op_kp.x_only_public_key().0.serialize();
+
+                let m = canonical_modulus(width, &m_raw);
+                let a = clamp_below(&a_raw, &m);
+                let b = clamp_below(&b_raw, &m);
+                let c = clamp_below(&c_raw, &m);
+
+                let honest_d = {
+                    let limbs = |bytes: &[u8]| -> [u64; 4] {
+                        let mut out = [0_u64; 4];
+                        for (idx, ch) in bytes.chunks(8).enumerate() {
+                            let mut buf = [0_u8; 8];
+                            buf[..ch.len()].copy_from_slice(ch);
+                            out[idx] = u64::from_le_bytes(buf);
+                        }
+                        out
+                    };
+                    let la = limbs(&a);
+                    let lb = limbs(&b);
+                    let lc = limbs(&c);
+                    let lm = limbs(&m);
+                    let mut prod = [0_u64; 8];
+                    for i in 0..4 {
+                        let mut carry = 0_u128;
+                        for j in 0..4 {
+                            let cur = u128::from(prod[i + j]) + u128::from(la[i]) * u128::from(lb[j]) + carry;
+                            prod[i + j] = u64::try_from(cur & u128::from(u64::MAX)).unwrap_or(0);
+                            carry = cur >> 64;
+                        }
+                        prod[i + 4] = u64::try_from(carry).unwrap_or(0);
+                    }
+                    let mut add_c = 0_u128;
+                    for i in 0..8 {
+                        let c_i = if i < 4 { u128::from(lc[i]) } else { 0 };
+                        let s = u128::from(prod[i]) + c_i + add_c;
+                        prod[i] = u64::try_from(s & u128::from(u64::MAX)).unwrap_or(0);
+                        add_c = s >> 64;
+                    }
+                    let mut rem = [0_u64; 5];
+                    let mut mod5 = [0_u64; 5];
+                    mod5[..4].copy_from_slice(&lm);
+                    for limb in prod.iter().rev() {
+                        for bit in (0..64_u32).rev() {
+                            let mut sh_c = 0_u64;
+                            for slot in &mut rem {
+                                let next = *slot >> 63;
+                                *slot = (*slot << 1) | sh_c;
+                                sh_c = next;
+                            }
+                            rem[0] |= (*limb >> bit) & 1;
+                            let ge = (0..5).rev().find(|&k| rem[k] != mod5[k]).is_none_or(|k| rem[k] > mod5[k]);
+                            if ge {
+                                let mut brw = 0_u64;
+                                for k in 0..5 {
+                                    let (d1, b1) = rem[k].overflowing_sub(mod5[k]);
+                                    let (d2, b2) = d1.overflowing_sub(brw);
+                                    rem[k] = d2;
+                                    brw = u64::from(b1) + u64::from(b2);
+                                }
+                            }
+                        }
+                    }
+                    let mut raw = [0_u8; 32];
+                    for (idx, limb) in rem[..4].iter().enumerate() {
+                        raw[idx * 8..(idx + 1) * 8].copy_from_slice(&limb.to_le_bytes());
+                    }
+                    raw[..width].to_vec()
+                };
+                let false_d = increment_mod(&honest_d, &m);
+                let std_flags = VerifyFlags::STANDARD.union(VerifyFlags::EXPERIMENTAL_MULADDMOD);
+
+                let honest_vals = [a.clone(), b.clone(), c.clone(), honest_d];
+                let honest_leaf = dispute_leaf(&inst1, &honest_vals, &m, 6, &rec_x, &op_x);
+                let (honest_rec_tx, honest_prev) = build_claim_spend(0x11, &honest_leaf, &honest_vals, &rec_kp, true, 6);
+                prop_assert_eq!(verify(&honest_rec_tx, &honest_prev, flags()), error(ScriptErrCode::EvalFalse));
+
+                let forged_wit = [a.clone(), b.clone(), c.clone(), false_d.clone()];
+                let (forged_tx, _) = build_claim_spend(0x11, &honest_leaf, &forged_wit, &rec_kp, true, 6);
+                prop_assert_eq!(verify(&forged_tx, &honest_prev, flags()), error(ScriptErrCode::EqualVerify));
+
+                let false_vals = [a, b, c, false_d];
+                let false_leaf = dispute_leaf(&inst1, &false_vals, &m, 6, &rec_x, &op_x);
+                let (false_rec_tx, false_prev) = build_claim_spend(0x22, &false_leaf, &false_vals, &rec_kp, true, 6);
+                prop_assert_eq!(verify(&false_rec_tx, &false_prev, flags()), Ok(true));
+                prop_assert_eq!(verify(&false_rec_tx, &false_prev, std_flags), Ok(true));
+
+                let mut inst2 = inst1;
+                inst2[0] ^= inst2_xor;
+                let other_leaf = dispute_leaf(&inst2, &false_vals, &m, 6, &rec_x, &op_x);
+                let (_, other_prev) = build_claim_spend(0x22, &other_leaf, &false_vals, &rec_kp, true, 6);
+                prop_assert_eq!(
+                    verify(&false_rec_tx, &other_prev, flags()),
+                    error(ScriptErrCode::WitnessProgramMismatch)
+                );
+
+                let (mut replay_outpoint_tx, _) = build_claim_spend(0x33, &false_leaf, &false_vals, &rec_kp, true, 6);
+                replay_outpoint_tx.inputs[0].witness = false_rec_tx.inputs[0].witness.clone();
+                prop_assert_eq!(
+                    verify(&replay_outpoint_tx, &false_prev, flags()),
+                    error(ScriptErrCode::SchnorrSig)
+                );
+            }
+        }
+    }
 }
