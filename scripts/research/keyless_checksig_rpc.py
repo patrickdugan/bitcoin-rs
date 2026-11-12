@@ -332,6 +332,7 @@ class Node:
         self.password = os.urandom(24).hex()
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self.process = None
+        self.exit_codes = []
         self.log = (root / 'node.log').open('ab')
 
     def rpc(self, method, params=None):
@@ -372,6 +373,7 @@ class Node:
         raise TimeoutError('regtest RPC startup timed out')
 
     def stop(self):
+        process = self.process
         if self.process is not None and self.process.poll() is None:
             self.process.send_signal(signal.SIGTERM)
             try:
@@ -380,6 +382,9 @@ class Node:
                 self.process.kill()
                 self.process.wait(timeout=10)
         self.process = None
+        if process is not None:
+            self.exit_codes.append(process.returncode)
+            require(process.returncode == 0, f'node exited with status {process.returncode}')
 
 
 def satoshis(value) -> int:
@@ -569,8 +574,12 @@ def run(binary: Path, report_path: Path):
         finally:
             try:
                 node.stop()
+            except BaseException as error:
+                report.update(status='failed', error=f'{type(error).__name__}: {error}')
+                raise
             finally:
                 node.log.close()
+                report['node_exit_codes'] = node.exit_codes
                 report_path.write_text(json.dumps(report, indent=2)+'\n')
                 report_path.with_suffix('.node.log').write_bytes((root/'node.log').read_bytes())
     print(json.dumps(report, indent=2))

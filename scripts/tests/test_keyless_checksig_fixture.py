@@ -289,6 +289,23 @@ class PolicyTests(unittest.TestCase):
 
 
 class FixtureRuntimeTests(unittest.TestCase):
+    def test_node_shutdown_requires_zero_exit_status(self):
+        for status in (0, 7):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                node = fixture.Node(Path(sys.executable), Path(directory))
+                node.process = subprocess.Popen([sys.executable, '-c', f'raise SystemExit({status})'])
+                node.process.wait(timeout=10)
+                try:
+                    if status:
+                        with self.assertRaisesRegex(ValueError, f'node exited with status {status}'):
+                            node.stop()
+                    else:
+                        node.stop()
+                    self.assertIsNone(node.process)
+                finally:
+                    node.stop()
+                    node.log.close()
+
     def test_optimized_python_refuses_before_starting_a_node(self):
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / 'receipt.json'
@@ -304,7 +321,7 @@ class FixtureRuntimeTests(unittest.TestCase):
             root = Path(directory)
             binary = root / 'fake-node'
             source = textwrap.dedent('''\
-                import json, os, sys
+                import json, os, signal, sys
                 from http.server import BaseHTTPRequestHandler, HTTPServer
                 from pathlib import Path
                 args = sys.argv[1:]
@@ -333,6 +350,7 @@ class FixtureRuntimeTests(unittest.TestCase):
                         self.end_headers()
                         self.wfile.write(data)
                 host, port = opts['--rpc-bind'].split(':')
+                signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
                 HTTPServer((host, int(port)), Handler).serve_forever()
                 ''')
             binary.write_text('#!'+sys.executable+'\n'+source)
