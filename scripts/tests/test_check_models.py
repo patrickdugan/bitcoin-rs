@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -312,19 +313,34 @@ class ModelEvidenceTests(unittest.TestCase):
         )
         self.write_tool(body)
         record = self.run_check(timeout=1)
+        self.assertEqual(record["k"], 16)
+        self.assertIsNone(record["native_rc"])
         self.assertEqual(record["evidence_rc"], 14)
-        pid_file = next(self.root.glob("target/apalache/**/descendant.pid"))
-        descendant = int(pid_file.read_text())
-        try:
-            stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
-        except (ProcessLookupError, FileNotFoundError):
-            stat = None
-        if stat is not None:
-            state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
-            self.assertEqual(state, "Z")
-        result = next(self.root.glob("target/apalache/**/result.json"))
-        self.assertEqual(json.loads(result.read_text()),
-                         {"k": 128, "native_rc": None, "evidence_rc": 14})
+        results = list(self.root.glob("target/apalache/**/result.json"))
+        self.assertEqual(
+            sorted(json.loads(path.read_text())["k"] for path in results),
+            [16, 32, 64, 128],
+        )
+        for path in results:
+            result = json.loads(path.read_text())
+            with self.subTest(bound=result["k"]):
+                self.assertEqual(result,
+                                 {"k": result["k"], "native_rc": None, "evidence_rc": 14})
+                descendant = int((path.parent / "descendant.pid").read_text())
+                deadline = time.monotonic() + 1
+                while True:
+                    try:
+                        stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
+                    except (ProcessLookupError, FileNotFoundError):
+                        break
+                    state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
+                    if state == "Z":
+                        break
+                    self.assertLess(time.monotonic(), deadline,
+                                    f"descendant {descendant} remains in state {state}")
+                    time.sleep(0.01)
+        self.assertEqual(json.loads((Path(record["run"]) / "result.json").read_text()),
+                         {"k": 16, "native_rc": None, "evidence_rc": 14})
 
     def test_parallel_execution_preserves_summary_order_and_worst_code_selection(self) -> None:
         expected_summary = {
