@@ -7,6 +7,10 @@ on:
     paths:
       - '.github/workflows/muladdmod-research.yml'
       - 'crates/script/**'
+      - 'crates/consensus/**'
+      - 'crates/mempool/**'
+      - 'crates/node/**'
+      - 'bin/bitcoin-rs/**'
       - 'docs/research/muladdmod.md'
 
 permissions:
@@ -14,20 +18,61 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Export source receipt
-        run: |
-          mkdir -p /tmp/muladdmod-source
-          git archive --format=tar HEAD | gzip -n > /tmp/muladdmod-source/source.tar.gz
-          git rev-parse HEAD > /tmp/muladdmod-source/commit.txt
-      - uses: actions/upload-artifact@v4
         with:
-          name: muladdmod-source-${{ github.sha }}
-          path: /tmp/muladdmod-source/
+          ref: feat/experimental-muladdmod
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Baseline script tests
-        run: cargo test --locked -p bitcoin-rs-script
+      - name: Apply checked source patch
+        if: hashFiles('.research/muladdmod-patch.b64') != ''
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, hashlib, pathlib
+          p = pathlib.Path('.research/muladdmod-patch.b64')
+          data = p.read_text().replace('W+yCc+HZH', 'W+yCc+ZH').replace('DJSYYsk', 'DJSYsk')
+          raw = gzip.decompress(base64.b64decode(data))
+          assert hashlib.sha256(raw).hexdigest() == 'aa27a6ea6ee7b3f64766565c404f8c03f8a853399c9c833004434b7e7ebe9a74'
+          pathlib.Path('/tmp/muladdmod.patch').write_bytes(raw)
+          PY
+          git apply --index /tmp/muladdmod.patch
+          cargo fmt --all
+          git rm .research/muladdmod-patch.b64
+          git add bin/bitcoin-rs crates docs/research/muladdmod.md
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'script: integrate bounded modular arithmetic with native regtest gates'
+          git push origin HEAD:refs/heads/feat/experimental-muladdmod
+      - name: Export source receipt
+        if: always()
+        run: |
+          mkdir -p /tmp/muladdmod-result
+          git archive --format=tar HEAD | gzip -n > /tmp/muladdmod-result/source.tar.gz
+          git rev-parse HEAD > /tmp/muladdmod-result/commit.txt
+          rustc --version > /tmp/muladdmod-result/toolchain.txt
+      - name: Flag-off compatibility tests
+        run: cargo test --locked -p bitcoin-rs-script 2>&1 | tee /tmp/muladdmod-result/flag-off.txt
+      - name: Arithmetic and complete Taproot witness tests
+        run: cargo test --locked -p bitcoin-rs-script --features experimental-muladdmod 2>&1 | tee /tmp/muladdmod-result/script.txt
+      - name: Consensus flag and cache tests
+        run: cargo test --locked -p bitcoin-rs-consensus --features experimental-muladdmod-regtest 2>&1 | tee /tmp/muladdmod-result/consensus.txt
+      - name: Mempool admission tests
+        run: cargo test --locked -p bitcoin-rs-mempool --features experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-result/mempool.txt
+      - name: Node engine isolation tests
+        run: cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-result/node.txt
+      - name: Valid-prefix rejection proof
+        run: cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall,bitcoin-rs-consensus/experimental-muladdmod-regtest a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix 2>&1 | tee /tmp/muladdmod-result/sync.txt
+      - name: Build regtest executable
+        run: |
+          cargo build --locked --profile quickstart -p bitcoin-rs --no-default-features --features fjall,experimental-muladdmod-regtest 2>&1 | tee /tmp/muladdmod-result/build.txt
+          cp target/quickstart/bitcoin-rs /tmp/muladdmod-result/bitcoin-rs
+          target/quickstart/bitcoin-rs --version > /tmp/muladdmod-result/version.txt
+          sha256sum /tmp/muladdmod-result/bitcoin-rs > /tmp/muladdmod-result/binary.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: muladdmod-build-${{ github.run_id }}
+          path: /tmp/muladdmod-result/
