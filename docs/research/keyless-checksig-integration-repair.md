@@ -1,6 +1,9 @@
 # Keyless integration repair and validation
 
-The tested runtime source is `f90037ec1ba8ab8678097f33aaebc89471282830`. This commit follows the original
+The checkpoint repair was first tested at
+`f90037ec1ba8ab8678097f33aaebc89471282830`.
+The latest tested code and binary are recorded in the CI compatibility
+follow-up below. The checkpoint repair follows the original
 `e616005407071dc1241bd17f891522f663cb1b34` integration and the independent
 [audit and shutdown-helper repair](keyless-checksig-local-audit.md).
 This work uses Keyless CHECKSIG / TXCOMMIT, separate from OP_MULADDMOD.
@@ -103,6 +106,54 @@ and CoinStats artifact length and SHA256 were verified.
 | 2 | 2 | `209b3eddbadb61650e94d13dd4aa7f387a8552d6120541d855aa0192cf153e1f` |
 | 3 | 3 | `5ad4f00fd4c2c7aa71a3b3915d7cbf23b43cbac44c54a3f5be12542d55d2f0a9` |
 | 3 | 4 | `5ad4f00fd4c2c7aa71a3b3915d7cbf23b43cbac44c54a3f5be12542d55d2f0a9` |
+
+## Rust 1.100 CI compatibility follow-up
+
+The latest tested code is `4e64c2b49828f77cd0a78efa5ba581a1ad5fe2f5`.
+The first pushed head, `1628b050a0bd54840a6908fe4d38593f5e7777c0`, encountered
+a new Rust 1.100 Clippy `needless_bool` diagnostic in the existing CLTV checker.
+The final-sequence guard now directly returns
+`input.sequence.to_consensus() != SEQUENCE_FINAL`.
+This is the same unsigned-integer predicate as the old false/true branch.
+No locktime condition, feature flag, test assertion or lint level changed.
+
+The complete script suite with both companions passed 95 tests, including its
+independent BIP65 table and Core vectors. All script targets also passed the
+installed Rust 1.99.1 Clippy with warnings denied. The clean-source executable
+was rebuilt with the original explicit regtest features. It is byte-for-byte
+identical to the earlier checkpoint-repair binary:
+`3899986f81d8da1f7977d5d9ebe3fe27df617971ce8ae6552e80a479e5a84d3b`.
+The final source and build receipt are in `build-ci-followup/report.json`.
+Its preserved artifact is `artifacts/bitcoin-rs-4e64c2b49` in the
+follow-up evidence packet.
+
+The final artifact passed the mounted funded fixture again: two 98,000-sat
+payouts, all 29 negatives, restart preservation and exits `[0, 0]`.
+It also passed the native campaign again: 36 block rejections, 12 positives,
+seven confirmations, spent-input replay refusal and exits `[0, 0]`.
+These fresh receipts are under `ci-followup`.
+
+The [intermediate Keyless workflow](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43321380405)
+passed both jobs with Rust 1.100. Its test ZIP was downloaded and matched
+GitHub's archive SHA256. Every recorded test-log digest and executed-test
+summary was checked: 35 Python tests and 511 Rust executions, zero failed or
+ignored. The CI source was the clean test merge
+`7bd4872cf2e296fa0494a315e90a61c71ca1a5e9`. Its tree
+`9f7365ec59755e605f7ef88be756eb078232d7ef` exactly matches `1628b050a`.
+The broader intermediate CI run stopped at Clippy before `test-crates` ran.
+The latest-head status is reported separately on the PR checks page.
+
+The original 112-file evidence packet was rechecked after this work:
+198,768,440 bytes, zero digest mismatches. The old receipts remain intact.
+
+| Follow-up receipt or log | SHA256 |
+| --- | --- |
+| `build-ci-followup/command.log` | `013e1746dccd87b2124a584090d22e73af291233fb9204559b7fcdb5c73ee24b` |
+| `cltv-script-after/command.log` | `9d2ba95c7efb84c37c2a6bcfe6738339e788a3b906a1027eaa5a544cd855c5a0` |
+| `cltv-clippy-after/command.log` | `c93ace729ae9949fca6c37776909218821853fab87c265b2c5280a551b3f41c6` |
+| `ci-followup/mounted-staging/keyless-regtest.json` | `dc5539eee2d78242b700dd04fd9afe5ce9a2fd40acbb8fb9fbb9003132975712` |
+| `ci-followup/adversarial/patched/report.json` | `cd8b1de4f877048cd17751e3cf8d6f2c14a2cb5259e5423011c5ca45281dad9f` |
+| `ci-1628-tests/artifact.zip` | `151a4aae48023c4296b66b19cefda0b763aabb7d334a08ef68e4bb91e63c5686` |
 
 ## ZMQ finding remains unlocalized
 
