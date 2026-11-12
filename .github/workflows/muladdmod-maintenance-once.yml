@@ -1,0 +1,75 @@
+name: MULADDMOD maintenance preparation
+on:
+  push:
+    branches: ['feat/experimental-muladdmod']
+    paths: ['.github/workflows/muladdmod-maintenance-once.yml']
+permissions:
+  contents: write
+jobs:
+  prepare:
+    if: github.repository == 'patrickdugan/bitcoin-rs' && github.ref == 'refs/heads/feat/experimental-muladdmod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: stable
+      - name: Regenerate patched dependency and repair bounded-retry test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('Cargo.toml')
+          s = p.read_text()
+          before = 'rustix = { version = "=1.1.5", features = ["fs"] }'
+          assert s.count(before) == 1
+          p.write_text(s.replace(before, before.replace('1.1.5', '1.1.6')))
+          p = Path('scripts/tests/test_check_models.py')
+          s = p.read_text()
+          a = s.index('        pid_file = next(self.root.glob("target/apalache/**/descendant.pid"))')
+          b = s.index('\n    def test_parallel_execution', a)
+          replacement = '''        results = list(self.root.glob("target/apalache/**/result.json"))
+                  self.assertEqual(len(results), 4)
+                  self.assertEqual({json.loads(path.read_text())["k"] for path in results},
+                                   {128, 64, 32, 16})
+                  for result in results:
+                      with self.subTest(run=result.parent):
+                          outcome = json.loads(result.read_text())
+                          self.assertIsNone(outcome["native_rc"])
+                          self.assertEqual(outcome["evidence_rc"], 14)
+                          descendant = int((result.parent / "descendant.pid").read_text())
+                          try:
+                              stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
+                          except (ProcessLookupError, FileNotFoundError):
+                              stat = None
+                          if stat is not None:
+                              state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
+                              self.assertEqual(state, "Z")
+          '''
+          lines = replacement.splitlines()
+          replacement = lines[0] + '\n' + '\n'.join(line[10:] for line in lines[1:])
+          p.write_text(s[:a] + replacement + s[b:])
+          PY
+          cargo update -p rustix --precise 1.1.6
+          cargo update --manifest-path fuzz/Cargo.toml -p rustix --precise 1.1.6
+          cargo update --manifest-path tools/template-provider/Cargo.toml -p rustix --precise 1.1.6
+          python3 -m unittest discover -s scripts/tests -p 'test_check_models.py' -v
+          git rm .github/workflows/muladdmod-maintenance-once.yml
+          git add Cargo.toml Cargo.lock fuzz/Cargo.lock tools/template-provider/Cargo.lock scripts/tests/test_check_models.py
+          git diff --cached --check
+          git config user.name 'Patrick Dugan'
+          git config user.email '2466053+patrickdugan@users.noreply.github.com'
+          git commit -m 'fix: upgrade rustix to 1.1.6 and check every timed-out model attempt'
+          git push origin HEAD:refs/heads/feat/experimental-muladdmod
+          mkdir -p /tmp/muladdmod-maintenance
+          git rev-parse HEAD > /tmp/muladdmod-maintenance/commit.txt
+          git diff HEAD^ HEAD > /tmp/muladdmod-maintenance/maintenance.patch
+          git archive HEAD | gzip -n > /tmp/muladdmod-maintenance/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: muladdmod-maintenance-${{ github.run_id }}
+          path: /tmp/muladdmod-maintenance/
