@@ -2,8 +2,7 @@
 
 The checkpoint repair was first tested at
 `f90037ec1ba8ab8678097f33aaebc89471282830`.
-The latest tested code and binary are recorded in the CI compatibility
-follow-up below. The checkpoint repair follows the original
+The final tested code is `13d3179e656a9f23b8da66625d4e16f3c064bca1`. Its runtime and exact current-toolchain gate are recorded below. The checkpoint repair follows the original
 `e616005407071dc1241bd17f891522f663cb1b34` integration and the independent
 [audit and shutdown-helper repair](keyless-checksig-local-audit.md).
 This work uses Keyless CHECKSIG / TXCOMMIT, separate from OP_MULADDMOD.
@@ -65,7 +64,8 @@ relative to the local checkout. The clean-source build receipt is
 
 The native test tools were Rust/Cargo 1.99.1, Python 3.12.3, Git 2.43.0, and
 cargo-nextest 0.9.148. The host was Ubuntu 24.04 on WSL2, kernel 6.18.54.1,
-glibc 2.39. No new software was installed.
+glibc 2.39. That initial validation installed no new software; the approved
+isolated compiler follow-up is recorded below.
 
 The runtime experiments ran only on isolated patched regtest with zero public
 peers. Its RPC genesis was `0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206`.
@@ -109,7 +109,7 @@ and CoinStats artifact length and SHA256 were verified.
 
 ## Rust 1.100 CI compatibility follow-up
 
-The latest tested code is `4e64c2b49828f77cd0a78efa5ba581a1ad5fe2f5`.
+The preceding CLTV follow-up tested code `4e64c2b49828f77cd0a78efa5ba581a1ad5fe2f5`.
 The first pushed head, `1628b050a0bd54840a6908fe4d38593f5e7777c0`, encountered
 a new Rust 1.100 Clippy `needless_bool` diagnostic in the existing CLTV checker.
 The final-sequence guard now directly returns
@@ -154,6 +154,60 @@ The original 112-file evidence packet was rechecked after this work:
 | `ci-followup/mounted-staging/keyless-regtest.json` | `dc5539eee2d78242b700dd04fd9afe5ce9a2fd40acbb8fb9fbb9003132975712` |
 | `ci-followup/adversarial/patched/report.json` | `cd8b1de4f877048cd17751e3cf8d6f2c14a2cb5259e5423011c5ca45281dad9f` |
 | `ci-1628-tests/artifact.zip` | `151a4aae48023c4296b66b19cefda0b763aabb7d334a08ef68e4bb91e63c5686` |
+
+## Final current-toolchain gate and runtime
+
+The final tested code is `13d3179e656a9f23b8da66625d4e16f3c064bca1`. Rust 1.100 also reported an existing
+fee-estimator range-loop lint and an address-manager boolean-guard lint.
+The estimator now iterates over the same fixed-array suffix with `iter_mut`
+and `skip`; offsets at or beyond the array length still update no entries.
+The address manager returns the equivalent `!final_pending && eligible`
+predicate. The self-address refusal and short-circuit order remain intact.
+No estimator schema, peer-selection rule, validation rule or activation flag
+changed. No lint level or test assertion was relaxed.
+
+An approved tool invocation installed official Rust 1.100.0 and Clippy in
+task-only `/tmp/keyless-rustup-19b-1100`, with a separate temporary Cargo home.
+The installer used the minimal profile and disabled self-update. The normal
+MSI compiler was checked afterwards and remains Rust 1.99.1. The new compiler
+was used explicitly for the exact `scripts/ci-pr.sh clippy` lane.
+A preliminary warnings-only collection was recorded as diagnostics, not as
+a passing gate. On the final formatted source, all four strict profiles and
+the production silent-payments check passed with warnings denied, jobs 2.
+
+The existing estimator suite passed 17 tests. The address-manager owner and
+Core fixture suite passed 83 tests. Neither suite failed or ignored a case.
+Their captured patch SHA256 matches the committed final code exactly.
+The earlier CLTV follow-up's 95 script tests remain separate evidence.
+
+A clean-source final executable was rebuilt with the unchanged explicit
+regtest-only features. Its version is 0.15.0, SHA256
+`b0b67335ea4aca2243c5b550d60aa8435513b47a620a8de3be9f7505c8ffbaea`. The artifact is
+`artifacts/bitcoin-rs-13d3179e6` in `../evidence/fixes`.
+The build and fresh replay receipts are `build-final/report.json` and
+`final-runtime/report.json`.
+
+The final executable passed the Windows-mount fixture again: two confirmed
+98,000-sat payouts, all 29 negative cases, restart and exits `[0, 0]`.
+The native adversarial campaign again passed 36 block rejections, 12 positive
+cases, seven confirmations and replay checks with exits `[0, 0]`.
+These are fresh final-source runs. They do not re-label an earlier executable.
+
+| Final receipt or log | SHA256 |
+| --- | --- |
+| `rust1100-strict-final/command.log` | `8231348c9cd642716730cf11ec8fe9976b652b35cc07c4b6b6b0c64fec927efb` |
+| `fee-estimator-after/command.log` | `782976aeda33b585050eb000617f5625419dd1fe802e8c2d514028e2fd62e3a2` |
+| `addrman-after/command.log` | `1c2a47bb4eb0571e56ab13b2957f8a4653e90712989453a044b5d15f6359c141` |
+| `build-final/command.log` | `2efa80b35676886c50eeeddadf8d03275a1b48b06850eb80606f2f3ef513a8b3` |
+| `final-runtime/mounted-staging/keyless-regtest.json` | `14662672f63a67d52610098c262ebae1f9ad4ac1e329414e606ab43a598abade` |
+| `final-runtime/adversarial/patched/report.json` | `cda0ceabb3f0ef70879e8f83276bf582687affc49082b195d561498cb27a2435` |
+
+The fee and address-manager changes affect optional estimation/discovery
+owners, without granting them chainstate transition authority (`SYNC-03`).
+The pending-reference and accounting oracles remain with their existing
+owner tests. The checkpoint and validation ownership/`SYNC-04`/`SYNC-05`
+analysis above remains unchanged. Current GitHub results belong to the
+published head's checks; historical ZMQ causality remains unproven.
 
 ## ZMQ finding remains unlocalized
 
