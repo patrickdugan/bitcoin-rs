@@ -1049,6 +1049,40 @@ fn validation_engine_defaults_to_native_and_layers_field_by_field() {
     );
 }
 
+// VAL-01, VAL-02
+#[test]
+fn keyless_and_cat_regtest_requires_the_native_engine_when_selected() {
+    for network in [
+        bitcoin_rs_primitives::Network::Mainnet,
+        bitcoin_rs_primitives::Network::Testnet3,
+        bitcoin_rs_primitives::Network::Testnet4,
+        bitcoin_rs_primitives::Network::Signet,
+        bitcoin_rs_primitives::Network::Regtest,
+    ] {
+        let mut config = NodeConfig::default_for_network(network);
+        config.validation.engine = ValidationEngine::Native;
+        assert!(config.validate().is_ok());
+        config.validation.engine = ValidationEngine::Kernel;
+        let refuses_experiment = network == bitcoin_rs_primitives::Network::Regtest
+            && (cfg!(feature = "experimental-keyless-checksig-regtest")
+                || cfg!(feature = "experimental-op-cat-regtest"));
+        let result = config.validate();
+        if refuses_experiment {
+            assert!(matches!(
+                result,
+                Err(ConfigError::ExperimentalRegtestRequiresNative)
+            ));
+        } else if cfg!(feature = "kernel") {
+            assert!(result.is_ok());
+        } else {
+            assert!(matches!(
+                result,
+                Err(ConfigError::ValidationEngineUnsupported { .. })
+            ));
+        }
+    }
+}
+
 #[test]
 #[cfg(feature = "kernel")]
 fn validation_engine_kernel_is_supported_when_compiled() {

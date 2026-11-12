@@ -296,6 +296,27 @@ impl<'t> SighashCache<'t> {
         leaf_hash_code_separator: Option<(Hash256, u32)>,
         sighash_type: Sighash,
     ) -> Result<Hash256, SighashError> {
+        self.taproot_signature_hash_with_key_version(
+            input_index,
+            prevouts,
+            annex,
+            leaf_hash_code_separator,
+            sighash_type,
+            0,
+        )
+    }
+
+    /// The explicit key version is committed only in a script-path extension.
+    /// Callers must select the version from their activated signature rules.
+    pub fn taproot_signature_hash_with_key_version(
+        &self,
+        input_index: usize,
+        prevouts: &[TxOut],
+        annex: Option<&[u8]>,
+        leaf_hash_code_separator: Option<(Hash256, u32)>,
+        sighash_type: Sighash,
+        key_version: u8,
+    ) -> Result<Hash256, SighashError> {
         let annex = annex.map(validate_annex).transpose()?;
         let ty_byte = sighash_type.to_u8();
         let base = ty_byte & 0x03;
@@ -368,7 +389,7 @@ impl<'t> SighashCache<'t> {
         }
         if let Some((leaf_hash, code_separator_position)) = leaf_hash_code_separator {
             msg.extend_from_slice(leaf_hash.as_byte_array());
-            msg.push(0x00);
+            msg.push(key_version);
             msg.extend_from_slice(&code_separator_position.to_le_bytes());
         }
 
@@ -655,6 +676,55 @@ mod tests {
                 "4cc7918733b1c9abd997206fac92d03183ec712d059dd5da5bd099e39b66a1d6"
             ))
         );
+    }
+
+    #[test]
+    fn txcommit_key_version_commits_annex_and_code_separator() {
+        let tx = synthetic_tx(2);
+        let prevouts = vec![crate::TxOut {
+            value: crate::Amount::from_sat(50_000),
+            script_pubkey: crate::Script::new(),
+        }];
+        let leaf = tapleaf_hash(TAPSCRIPT_LEAF_VERSION, &[0x51]);
+        let cases: [(u8, Option<&[u8]>, u32, &str); 4] = [
+            (
+                0,
+                None,
+                CODESEPARATOR_POSITION,
+                "4cc7918733b1c9abd997206fac92d03183ec712d059dd5da5bd099e39b66a1d6",
+            ),
+            (
+                2,
+                None,
+                CODESEPARATOR_POSITION,
+                "9a3069742b98d9097018394178dee69f463ee06c599d5287c47924fbc43c1d94",
+            ),
+            (
+                0,
+                Some(&[0x50, 0x42]),
+                7,
+                "f3e30248c9930659224a477132d55442f452532b81263db5bb3486e236e6e546",
+            ),
+            (
+                2,
+                Some(&[0x50, 0x42]),
+                7,
+                "bb5bfbda2a2c05e923e49402c0e0c44fee61a9c8b1808224d67a86d7cf0f8ec1",
+            ),
+        ];
+        for (version, annex, separator, expected) in cases {
+            assert_eq!(
+                SighashCache::new(&tx).taproot_signature_hash_with_key_version(
+                    0,
+                    &prevouts,
+                    annex,
+                    Some((leaf, separator)),
+                    Sighash::Default,
+                    version,
+                ),
+                Ok(pin(expected)),
+            );
+        }
     }
 
     #[test]

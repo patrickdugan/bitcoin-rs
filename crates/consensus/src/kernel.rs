@@ -141,6 +141,7 @@ mod kernel_backend {
         input_index: usize,
         flags: VerifyFlags,
     ) -> Result<(), ConsensusError> {
+        super::ensure_flags_supported(crate::ValidationEngine::Kernel, flags)?;
         let script =
             bitcoinkernel::ScriptPubkey::new(&prevout.script_pubkey).map_err(map_kernel_error)?;
         let amount = i64::try_from(prevout.value.to_sat())
@@ -302,6 +303,19 @@ pub(crate) fn verify_prepared_input(
     }
 }
 
+fn ensure_flags_supported(
+    engine: ValidationEngine,
+    flags: VerifyFlags,
+) -> Result<(), ConsensusError> {
+    if engine == ValidationEngine::Kernel
+        && (flags.contains(VerifyFlags::EXPERIMENTAL_TXCOMMIT)
+            || flags.contains(VerifyFlags::EXPERIMENTAL_OP_CAT))
+    {
+        return Err(ConsensusError::UnsupportedEngine { engine });
+    }
+    Ok(())
+}
+
 pub fn verify_tx_scripts(
     tx: &Tx,
     spent_outputs: &[(OutPoint, TxOut)],
@@ -309,6 +323,7 @@ pub fn verify_tx_scripts(
     engine: ValidationEngine,
     signature_cache: Option<&bitcoin_rs_script::SignatureCache>,
 ) -> Result<(), ConsensusError> {
+    ensure_flags_supported(engine, flags)?;
     match engine {
         ValidationEngine::Native => {
             let prepared = bitcoin_rs_script::PreparedTransaction::new(tx, spent_outputs)?;
@@ -352,6 +367,34 @@ mod tests {
     use bitcoin_rs_primitives::{BlockPayload, Network};
 
     use super::*;
+
+    // VAL-02
+    #[test]
+    fn keyless_and_cat_flags_cannot_reach_kernel_verification() {
+        let block = Network::Regtest.genesis_block();
+        let tx = &block.txs[0];
+        let prevouts = [(tx.inputs[0].previous_output, tx.outputs[0].clone())];
+        for flag in [
+            VerifyFlags::EXPERIMENTAL_TXCOMMIT,
+            VerifyFlags::EXPERIMENTAL_OP_CAT,
+            VerifyFlags::EXPERIMENTAL_TXCOMMIT.union(VerifyFlags::EXPERIMENTAL_OP_CAT),
+        ] {
+            assert!(ensure_flags_supported(ValidationEngine::Native, flag).is_ok());
+            assert_eq!(
+                ensure_flags_supported(ValidationEngine::Kernel, flag),
+                Err(ConsensusError::UnsupportedEngine {
+                    engine: ValidationEngine::Kernel
+                })
+            );
+            assert_eq!(
+                verify_tx_scripts(tx, &prevouts, flag, ValidationEngine::Kernel, None),
+                Err(ConsensusError::UnsupportedEngine {
+                    engine: ValidationEngine::Kernel
+                })
+            );
+        }
+        assert!(ensure_flags_supported(ValidationEngine::Kernel, VerifyFlags::MANDATORY).is_ok());
+    }
 
     #[test]
     fn block_preparation_rejects_misordered_prevout_identities() {

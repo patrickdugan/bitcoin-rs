@@ -52,6 +52,7 @@ pub mod opcode {
         pub(crate) OP_ROT = 0x7b,
         pub(crate) OP_SWAP = 0x7c,
         pub(crate) OP_TUCK = 0x7d,
+        pub(crate) OP_CAT = 0x7e,
         pub(crate) OP_SIZE = 0x82,
         pub(crate) OP_1ADD = 0x8b,
         pub(crate) OP_1SUB = 0x8c,

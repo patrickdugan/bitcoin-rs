@@ -1,6 +1,7 @@
 mod adversarial_limits;
 mod core_vectors;
 mod ecdsa_encoding_order;
+mod keyless_checksig;
 mod proptest;
 mod segwit_v0_sighash_edges;
 mod stack_limits;

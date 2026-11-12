@@ -20,6 +20,22 @@ const MERKLE_NODE_SERIALIZED_SIZE: usize = 64;
 pub const WITNESS_SCALE_FACTOR: u64 = 4;
 
 #[must_use]
+pub const fn experimental_regtest_flags(network: Network) -> bitcoin_rs_script::VerifyFlags {
+    use bitcoin_rs_script::VerifyFlags;
+
+    let mut flags = VerifyFlags::NONE;
+    if matches!(network, Network::Regtest) {
+        if cfg!(feature = "experimental-keyless-checksig-regtest") {
+            flags = flags.union(VerifyFlags::EXPERIMENTAL_TXCOMMIT);
+        }
+        if cfg!(feature = "experimental-op-cat-regtest") {
+            flags = flags.union(VerifyFlags::EXPERIMENTAL_OP_CAT);
+        }
+    }
+    flags
+}
+
+#[must_use]
 pub fn is_sixty_four_byte_mutation(txs: &[Tx]) -> bool {
     txs.first().is_some_and(|first| !first.is_coinbase())
         && txs
@@ -55,7 +71,9 @@ pub fn verify_flags(
             .union(VerifyFlags::NULLDUMMY);
     }
     if network.is_taproot_active(height) {
-        flags = flags.union(VerifyFlags::TAPROOT);
+        flags = flags
+            .union(VerifyFlags::TAPROOT)
+            .union(experimental_regtest_flags(network));
     }
     flags
 }

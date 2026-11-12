@@ -40,6 +40,8 @@ impl VerifyFlags {
     pub const DISCOURAGE_UPGRADABLE_TAPROOT_VERSION: Self = Self(1 << 18);
     pub const DISCOURAGE_OP_SUCCESS: Self = Self(1 << 19);
     pub const DISCOURAGE_UPGRADABLE_PUBKEYTYPE: Self = Self(1 << 20);
+    pub const EXPERIMENTAL_TXCOMMIT: Self = Self(1 << 22);
+    pub const EXPERIMENTAL_OP_CAT: Self = Self(1 << 23);
     pub const MANDATORY: Self = Self(
         Self::P2SH.0
             | Self::DERSIG.0
@@ -103,6 +105,15 @@ impl VerifyFlags {
         Self(self.0 | other.0)
     }
 
+    pub(crate) const fn txcommit_enabled(self) -> bool {
+        cfg!(feature = "experimental-keyless-checksig")
+            && self.contains(Self::EXPERIMENTAL_TXCOMMIT)
+    }
+
+    pub(crate) const fn op_cat_enabled(self) -> bool {
+        cfg!(feature = "experimental-op-cat") && self.contains(Self::EXPERIMENTAL_OP_CAT)
+    }
+
     pub fn from_core_names(names: &str) -> Result<Self, ScriptError> {
         let mut flags = Self::NONE;
         for name in names
@@ -112,6 +123,8 @@ impl VerifyFlags {
         {
             flags = flags.union(match name {
                 "NONE" => Self::NONE,
+                "EXPERIMENTAL_TXCOMMIT" => Self::EXPERIMENTAL_TXCOMMIT,
+                "EXPERIMENTAL_OP_CAT" => Self::EXPERIMENTAL_OP_CAT,
                 "P2SH" => Self::P2SH,
                 "STRICTENC" => Self::STRICTENC,
                 "DERSIG" => Self::DERSIG,
@@ -169,6 +182,9 @@ macro_rules! script_errors {
 }
 
 script_errors! {
+    ExperimentalDisabled = "EXPERIMENTAL_DISABLED",
+    TxCommitSize = "TXCOMMIT_SIZE",
+    TxCommitMismatch = "TXCOMMIT_MISMATCH",
     EvalFalse = "EVAL_FALSE",
     Verify = "VERIFY",
     EqualVerify = "EQUALVERIFY",
@@ -404,6 +420,11 @@ fn verify_script(
     flags: VerifyFlags,
     checker: &mut TxSignatureChecker<'_>,
 ) -> Result<(), ScriptError> {
+    if (flags.contains(VerifyFlags::EXPERIMENTAL_TXCOMMIT) && !flags.txcommit_enabled())
+        || (flags.contains(VerifyFlags::EXPERIMENTAL_OP_CAT) && !flags.op_cat_enabled())
+    {
+        return Err(invalid(ScriptErrCode::ExperimentalDisabled));
+    }
     if flags.contains(VerifyFlags::SIGPUSHONLY) && !is_push_only(script_sig) {
         return Err(invalid(ScriptErrCode::SigPushonly));
     }

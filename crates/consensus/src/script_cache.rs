@@ -156,6 +156,28 @@ mod tests {
         assert!(cache.take(key(2), VerifyFlags::MANDATORY));
     }
 
+    // VAL-02
+    #[test]
+    fn keyless_and_cat_cache_entries_keep_the_full_flag_identity() {
+        let cache = ScriptExecutionCache::new();
+        let txcommit = VerifyFlags::MANDATORY.union(VerifyFlags::EXPERIMENTAL_TXCOMMIT);
+        let cat = VerifyFlags::MANDATORY.union(VerifyFlags::EXPERIMENTAL_OP_CAT);
+        let both = txcommit.union(VerifyFlags::EXPERIMENTAL_OP_CAT);
+        let flags = [VerifyFlags::MANDATORY, txcommit, cat, both];
+        for (index, inserted) in flags.iter().copied().enumerate() {
+            cache.insert(key(index), inserted);
+            for other in flags
+                .iter()
+                .copied()
+                .filter(|candidate| *candidate != inserted)
+            {
+                assert!(!cache.take(key(index), other));
+            }
+            assert!(cache.take(key(index), inserted));
+            assert!(!cache.take(key(index), inserted));
+        }
+    }
+
     #[test]
     fn reinserting_a_live_key_adds_no_second_queue_node() {
         let cache = ScriptExecutionCache::new();

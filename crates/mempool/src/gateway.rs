@@ -228,7 +228,7 @@ impl PreparedAdmission {
             &PrevoutMap::new(&self.prevouts),
             height,
             request.locktime_cutoff,
-            VerifyFlags::STANDARD,
+            VerifyFlags::STANDARD.union(request.next_block_script_flags),
         )
         .is_err()
         {
@@ -286,7 +286,7 @@ impl PreparedAdmission {
                 &chain,
                 height,
                 request.locktime_cutoff,
-                VerifyFlags::STANDARD,
+                VerifyFlags::STANDARD.union(request.next_block_script_flags),
                 self.engine,
                 Some(&signature_cache),
             )
@@ -970,8 +970,11 @@ impl MempoolGateway {
         let standard = standard_result.is_ok();
         let mut context = request.context;
         if standard {
-            context.sigop_cost =
-                transaction_sigop_cost(&request.tx, &prevouts, VerifyFlags::STANDARD);
+            context.sigop_cost = transaction_sigop_cost(
+                &request.tx,
+                &prevouts,
+                VerifyFlags::STANDARD.union(request.next_block_script_flags),
+            );
             context.vsize = context.vsize.max(crate::accounting::policy_vsize(
                 &request.tx,
                 context.sigop_cost,
