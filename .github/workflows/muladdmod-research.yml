@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/muladdmod-research.yml'
+      - '.cargo/config.toml'
       - 'crates/script/**'
       - 'crates/consensus/**'
       - 'crates/chainstate/**'
@@ -27,7 +28,7 @@ defaults:
     shell: bash
 
 concurrency:
-  group: muladdmod-${{ github.head_ref || github.ref_name }}
+  group: muladdmod-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -45,6 +46,8 @@ jobs:
           git rev-parse HEAD > /tmp/muladdmod-tests/commit.txt
           rustc --version > /tmp/muladdmod-tests/toolchain.txt
           cargo fmt --all --check
+      - name: Experimental Clippy lint gate
+        run: cargo clippy --locked -p bitcoin-rs-script --all-targets --features experimental-muladdmod -- -D warnings
       - name: Claim admission and official Schnorr vectors
         run: python3 -m unittest discover -s scripts/tests -p 'test_muladdmod*.py' -v
       - name: Flag-off compatibility tests
@@ -57,8 +60,18 @@ jobs:
         run: cargo test --locked -p bitcoin-rs-mempool --features experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-tests/mempool.txt
       - name: Node engine isolation tests
         run: cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-tests/node.txt
-      - name: Valid-prefix rejection proof
-        run: cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall,bitcoin-rs-consensus/experimental-muladdmod-regtest a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix 2>&1 | tee /tmp/muladdmod-tests/sync.txt
+      - name: Valid-prefix and invalidated-header rejection proofs
+        run: |
+          set -euo pipefail
+          cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall,bitcoin-rs-consensus/experimental-muladdmod-regtest a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix 2>&1 | tee /tmp/muladdmod-tests/sync.txt
+          cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall invalidated_header_and_invalid_parent_cannot_validate_or_commit 2>&1 | tee -a /tmp/muladdmod-tests/sync.txt
+          cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest submit_and_generate_refuse_invalidated_blocks_and_mine_distinct_replacements 2>&1 | tee -a /tmp/muladdmod-tests/node.txt
+      - name: ZMQ over-aligned command_t regression stress
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 16); do
+            cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,zmq zmq_publisher_handle_reports_active_metadata -- --quiet
+          done
       - name: Require test results and record counts
         run: |
           python3 - <<'PY'

@@ -1672,9 +1672,36 @@
       "files": [
         ".github/workflows/muladdmod-research.yml"
       ],
-      "summary": "Push trigger had typo 'feat/experimental-muladdaddmod' instead of 'feat/experimental-muladdmod', preventing automatic research workflow execution on branch pushes.",
+      "summary": "Push trigger had typo 'feat/experimental-muladdaddmod' instead of 'feat/experimental-muladdmod' and shared concurrency group cancelled push runs when PR runs started.",
       "regression_tests": [
         ".github/workflows/muladdmod-research.yml"
+      ]
+    },
+    {
+      "id": "DEFECT-03",
+      "severity": "Medium-High (Native Memory Safety / libzmq Over-Aligned AVX Store SIGSEGV)",
+      "files": [
+        ".cargo/config.toml",
+        ".github/workflows/muladdmod-research.yml"
+      ],
+      "summary": "Vendored zeromq-src (libzmq 4.3.4) omitted HAVE_POSIX_MEMALIGN on x86_64-unknown-linux-gnu, causing yqueue<command_t> to allocate 64-byte-aligned command_t chunks via 16-byte malloc and triggering SIGSEGV on GCC AVX vmovdqa stores in ypipe_t<command_t, 16>::write during SocketZmqPublisher drop (zmq_publisher_handle_reports_active_metadata).",
+      "regression_tests": [
+        "bitcoin-rs-node::state::tests::construction::zmq_publisher_handle_reports_active_metadata (16x CI loop)"
+      ]
+    },
+    {
+      "id": "DEFECT-04",
+      "severity": "Low (CI Workflow YAML & Rust 1.100.0 Clippy Compatibility)",
+      "files": [
+        ".github/workflows/main.yml",
+        "crates/script/src/checker.rs",
+        "crates/mempool/src/fee_estimator.rs",
+        "crates/p2p/src/addrman.rs"
+      ],
+      "summary": "Unquoted `:: ` in .github/workflows/main.yml:262 broke GitHub Actions YAML parsing on branch pushes, and Rust 1.100.0 Clippy flagged three pre-existing needless_bool / needless_range_loop constructs.",
+      "regression_tests": [
+        ".github/workflows/ci.yml (fmt, clippy, contracts, deny, test-crates)",
+        ".github/workflows/muladdmod-research.yml (semantics, regtest-build)"
       ]
     }
   ]

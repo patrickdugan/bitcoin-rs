@@ -557,20 +557,20 @@ mod active {
                     let lc = limbs(&c);
                     let lm = limbs(&m);
                     let mut prod = [0_u64; 8];
-                    for i in 0..4 {
+                    for (i, &la_i) in la.iter().enumerate() {
                         let mut carry = 0_u128;
-                        for j in 0..4 {
-                            let cur = u128::from(prod[i + j]) + u128::from(la[i]) * u128::from(lb[j]) + carry;
+                        for (j, &lb_j) in lb.iter().enumerate() {
+                            let cur = u128::from(prod[i + j]) + u128::from(la_i) * u128::from(lb_j) + carry;
                             prod[i + j] = u64::try_from(cur & u128::from(u64::MAX)).unwrap_or(0);
                             carry = cur >> 64;
                         }
                         prod[i + 4] = u64::try_from(carry).unwrap_or(0);
                     }
                     let mut add_c = 0_u128;
-                    for i in 0..8 {
-                        let c_i = if i < 4 { u128::from(lc[i]) } else { 0 };
-                        let s = u128::from(prod[i]) + c_i + add_c;
-                        prod[i] = u64::try_from(s & u128::from(u64::MAX)).unwrap_or(0);
+                    for (i, slot) in prod.iter_mut().enumerate() {
+                        let c_i = lc.get(i).copied().map_or(0, u128::from);
+                        let s = u128::from(*slot) + c_i + add_c;
+                        *slot = u64::try_from(s & u128::from(u64::MAX)).unwrap_or(0);
                         add_c = s >> 64;
                     }
                     let mut rem = [0_u64; 5];
@@ -588,10 +588,10 @@ mod active {
                             let ge = (0..5).rev().find(|&k| rem[k] != mod5[k]).is_none_or(|k| rem[k] > mod5[k]);
                             if ge {
                                 let mut brw = 0_u64;
-                                for k in 0..5 {
-                                    let (d1, b1) = rem[k].overflowing_sub(mod5[k]);
+                                for (slot, &m_k) in rem.iter_mut().zip(&mod5) {
+                                    let (d1, b1) = slot.overflowing_sub(m_k);
                                     let (d2, b2) = d1.overflowing_sub(brw);
-                                    rem[k] = d2;
+                                    *slot = d2;
                                     brw = u64::from(b1) + u64::from(b2);
                                 }
                             }

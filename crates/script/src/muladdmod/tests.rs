@@ -177,20 +177,20 @@ mod properties {
         let lc = unpack256(c);
         let lm = unpack256(m);
         let mut prod = [0_u64; 8];
-        for i in 0..4 {
+        for (i, &la_i) in la.iter().enumerate() {
             let mut carry = 0_u128;
-            for j in 0..4 {
-                let cur = u128::from(prod[i + j]) + u128::from(la[i]) * u128::from(lb[j]) + carry;
+            for (j, &lb_j) in lb.iter().enumerate() {
+                let cur = u128::from(prod[i + j]) + u128::from(la_i) * u128::from(lb_j) + carry;
                 prod[i + j] = u64::try_from(cur & u128::from(u64::MAX)).unwrap_or(0);
                 carry = cur >> 64;
             }
             prod[i + 4] = u64::try_from(carry).unwrap_or(0);
         }
         let mut add_carry = 0_u128;
-        for i in 0..8 {
-            let addend = if i < 4 { u128::from(lc[i]) } else { 0 };
-            let sum = u128::from(prod[i]) + addend + add_carry;
-            prod[i] = u64::try_from(sum & u128::from(u64::MAX)).unwrap_or(0);
+        for (i, slot) in prod.iter_mut().enumerate() {
+            let addend = lc.get(i).copied().map_or(0, u128::from);
+            let sum = u128::from(*slot) + addend + add_carry;
+            *slot = u64::try_from(sum & u128::from(u64::MAX)).unwrap_or(0);
             add_carry = sum >> 64;
         }
         let rem = rem_wide_by_256(&prod, &lm);
