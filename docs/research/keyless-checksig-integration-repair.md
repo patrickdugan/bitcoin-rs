@@ -249,7 +249,7 @@ binary identity above remain applicable. The receipt is
 `95b794fdc5af87e688131852cbb449485877faf9f03e2c04aca234d1d3c862fa` and
 `aadf04d4bd016ef2cafbecf0d40fb51455f989a7553b4a451f72e0f60f10cc03`.
 
-## ZMQ finding remains unlocalized
+## ZMQ termination trace and alignment repair
 
 The [original broad CI run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43249495342)
 recorded SIGSEGV in
@@ -261,6 +261,38 @@ reproduced this SIGSEGV on Rust 1.100. Its node profile completed 383 passes,
 one crashed test and two existing subprocess-entrypoint skips. The complete
 job log is retained as `github-test-crates-43333152503.json`.
 The green Keyless matrix does not override this failed broad gate.
+
+The later [run 43338813841](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43338813841)
+at `e47175929bb16c6d5e8b1ce2495bc179ddc7fd33` reproduced the crash and captured
+a symbolized native trace without installing GDB. The exact unit executable
+SHA256 is `9f29038d47cdde5c5e6cf60a3a5a66fce49d063c8c83859c7d032d2e56e59e67`.
+The crash is in `ypipe_t<command_t,16>::write`, during `ctx_t::terminate`.
+The fault instruction at relative address `0xcc8011` is an aligned AVX store
+(`c5 fd 7f 00`). The source-matched diagnostic archive SHA256 is
+`dac0d1cef114763877d4b0e6c8b894880966ec85a6f12e0ea41e4c76300a9d13`.
+The packet retains the executable, raw trace, symbolization and all digests.
+
+The locked [command type](https://github.com/zeromq/libzmq/blob/v4.3.4/src/command.hpp)
+requires 64-byte alignment. Its [queue allocator](https://github.com/zeromq/libzmq/blob/v4.3.4/src/yqueue.hpp)
+uses ordinary `malloc` unless `HAVE_POSIX_MEMALIGN` is set. The exact
+[vendored builder](https://github.com/jean-airoldie/zeromq-src-rs/blob/v0.2.6%2B4.3.4/src/lib.rs)
+writes an empty platform header and does not set that feature.
+Ordinary `malloc` does not guarantee this over-alignment.
+
+The Linux x86_64 GNU Cargo configuration now selects `posix_memalign` and
+64-byte queue alignment for the C++ build. The target-specific setting is
+unforced, so an explicit target-specific environment setting retains priority.
+Windows and other target compiler settings are unchanged. This changes the
+optional notification transport's allocation path, without changing consensus
+or granting it chainstate authority (`SYNC-03`).
+
+The added native alignment check compiles the locked queue headers twice.
+The baseline selects the original allocator and must report at least one
+misaligned live queue allocation. The repaired variant must report eight
+allocations aligned to the type's 64-byte requirement. The existing broad
+gate and metadata test remain unchanged, followed by 100 bounded repetitions
+of that same metadata test. Hosted before/after validation of this repair is
+pending at this report revision; a captured trace alone is not a passing gate.
 
 The PR's existing failed `test-crates` step remains unchanged. A failure-only
 diagnostic on this research branch collects up to six bounded native traces
@@ -286,9 +318,9 @@ The frozen test binary SHA256 is `0b4c0645f90d79b9e200e0cd4c12dcf8aedb00b094cf7b
 
 The failing CI host used Ubuntu 26.04.1, nextest 0.9.143 and mold
 2.40.4+dfsg-2.1ubuntu1. Those differ from the installed local environment.
-A diagnostic backtrace or local reproduction of that failure is still needed to
-claim a causal ZMQ repair. Green staging or a later green CI run cannot prove
-the old intermittent fault is eliminated.
+The captured trace localizes the fault. The alignment regression and unchanged
+broad gate must verify the repair before a passing result can be claimed.
+Green Keyless staging alone cannot prove that this fault is eliminated.
 
 ## Reproduce and inspect
 
