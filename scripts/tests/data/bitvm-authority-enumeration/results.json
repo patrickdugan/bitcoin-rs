@@ -1,0 +1,217 @@
+{
+  "schema": "cpa-gate-enumeration-study/v1",
+  "scope": "offline synthetic and existing CPA Python oracle",
+  "source_head": "29ca519031fcd67f467881e16ba73e0eb1211759",
+  "arena_native_source_available": false,
+  "HF_consensus_verifier_implemented": false,
+  "enumeration": {
+    "parameters": {
+      "permission_inputs": 2,
+      "selector_inputs": 1,
+      "permission_output": "last gate",
+      "selector_output": "input 2",
+      "gates": "NAND only, unordered operands, all gates reachable",
+      "max_nand_gates": 5
+    },
+    "layers": [
+      {
+        "nand_gate_count": 1,
+        "raw_sequences": 3,
+        "all_gates_reachable_sequences": 3,
+        "identities_at_gate_count": 3,
+        "cumulative_identities": 3,
+        "cumulative_functions": 3
+      },
+      {
+        "nand_gate_count": 2,
+        "raw_sequences": 18,
+        "all_gates_reachable_sequences": 9,
+        "identities_at_gate_count": 9,
+        "cumulative_identities": 12,
+        "cumulative_functions": 9
+      },
+      {
+        "nand_gate_count": 3,
+        "raw_sequences": 180,
+        "all_gates_reachable_sequences": 45,
+        "identities_at_gate_count": 42,
+        "cumulative_identities": 51,
+        "cumulative_functions": 13
+      },
+      {
+        "nand_gate_count": 4,
+        "raw_sequences": 2700,
+        "all_gates_reachable_sequences": 333,
+        "identities_at_gate_count": 246,
+        "cumulative_identities": 273,
+        "cumulative_functions": 15
+      },
+      {
+        "nand_gate_count": 5,
+        "raw_sequences": 56700,
+        "all_gates_reachable_sequences": 3393,
+        "identities_at_gate_count": 1770,
+        "cumulative_identities": 1851,
+        "cumulative_functions": 16
+      }
+    ],
+    "unique_programs": 1851,
+    "semantic_functions": 16,
+    "function_multiplicities": {
+      "0000": 67,
+      "0001": 75,
+      "0010": 57,
+      "0011": 164,
+      "0100": 57,
+      "0101": 164,
+      "0110": 8,
+      "0111": 86,
+      "1000": 17,
+      "1001": 11,
+      "1010": 191,
+      "1011": 119,
+      "1100": 191,
+      "1101": 119,
+      "1110": 240,
+      "1111": 285
+    }
+  },
+  "compiler": {
+    "programs_tested": 32,
+    "exhaustive_truth_tables_represented": 16,
+    "input_cases": 256,
+    "accepted": 72,
+    "mismatches": 0,
+    "level": "existing independent Python Script oracle; no native HF verifier"
+  },
+  "planted_topology_collision": {
+    "planted_mutant": "identifier commits only to gate/input type histogram; wiring omitted",
+    "buckets": 10,
+    "semantically_ambiguous_buckets": 9,
+    "programs_in_ambiguous_buckets": 1850,
+    "concrete_pair": {
+      "C1": "NAND(a, NAND(a,b))",
+      "C2": "NAND(b, NAND(a,a))",
+      "truth_C1": "1101",
+      "truth_C2": "1011",
+      "type_histogram": {
+        "input": 3,
+        "nand": 2
+      },
+      "CPA_ids_distinct": true,
+      "permission_leak_inputs_C1_to_C2": [
+        2
+      ]
+    }
+  },
+  "key_relations": {
+    "known_tweaks_removed_to_actual_NUMS_point": 32,
+    "tested_authorities": 32,
+    "known_tweak_pair_relation_verified": true,
+    "planted_public_scalar_construction_recomputable_secrets": 32,
+    "synthetic_anchor_leak_recoveries": 32,
+    "actual_NUMS_private_log_recovered": false,
+    "scope": "public group identities and planted known-secret controls; no real private key recovered"
+  },
+  "statement_packing": {
+    "field_modulus": "57896044618658097711785492504343953926634992332820282019728792003956564819949",
+    "x_low": "17",
+    "x_high": "57896044618658097711785492504343953926634992332820282019728792003956564819966",
+    "one_field_reduction_alias": true,
+    "two_128bit_limbs_distinct": true,
+    "scope": "planted public-input encoder; does not solve any SHA256 digest target"
+  },
+  "mutations": [
+    {
+      "family": "honest",
+      "expected_accept": true,
+      "observed_accept": true,
+      "matches_expectation": true,
+      "reason": "exact committed action"
+    },
+    {
+      "family": "valid_child_over_parent_cap",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "parent retained guard"
+    },
+    {
+      "family": "replace_parent_id",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "authority/context binding"
+    },
+    {
+      "family": "replace_current_state",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "authority/context binding"
+    },
+    {
+      "family": "replace_grant_id",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "authority/context binding"
+    },
+    {
+      "family": "replace_child_statement",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "authority/context binding"
+    },
+    {
+      "family": "fresh_wrong_payout_6999",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "actual output binding"
+    },
+    {
+      "family": "fresh_wrong_payout_7001",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "actual output binding"
+    },
+    {
+      "family": "copy_between_same_address_coins",
+      "expected_accept": false,
+      "observed_accept": false,
+      "matches_expectation": true,
+      "reason": "outpoint differs"
+    },
+    {
+      "family": "rebind_same_address_coin",
+      "expected_accept": true,
+      "observed_accept": true,
+      "matches_expectation": true,
+      "reason": "public relation permits a fresh valid witness"
+    },
+    {
+      "family": "wider_authority_positive_control",
+      "expected_accept": true,
+      "observed_accept": true,
+      "matches_expectation": true,
+      "different_address": true,
+      "reason": "legitimate different policy; cannot impersonate the fixed funded authority"
+    }
+  ],
+  "prefix_grinding_expected_trials": {
+    "16": "65536",
+    "32": "4294967296",
+    "64": "18446744073709551616",
+    "128": "340282366920938463463374607431768211456",
+    "256": "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+  },
+  "raw_bound_k8_g24_log2": 178.72811126794605,
+  "source_sha256": {
+    "canonical_proof_authority": "a7dcd6bbad68589247ebc4f5567654d83d0631e18f01911a21f4c00957e16076",
+    "cpa_transition": "8cf6cd2eb274ec2c52f9e9f7d7563577977a2d0c61268c07770b6b18a15da761",
+    "independent_oracle": "d1bad08be5ba20ee8ef70b70c6ecdf5b90ec62f5151d79921483a7c67ab743e4"
+  }
+}
