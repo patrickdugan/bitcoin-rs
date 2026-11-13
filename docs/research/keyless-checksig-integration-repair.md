@@ -209,6 +209,42 @@ owner tests. The checkpoint and validation ownership/`SYNC-04`/`SYNC-05`
 analysis above remains unchanged. Current GitHub results belong to the
 published head's checks; historical ZMQ causality remains unproven.
 
+## Hosted artifact and workflow syntax repair
+
+The hosted funded job at published source `3906a6e187d80f18b050640de1893252592b05ab`
+passed in [run 43333152632](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43333152632).
+Its test merge `c3e007109ae1008d73e8b0aa5fc918155cabca7f` has the same tree
+`e9c57b46b1fb5eeb45634178e14c22461b0d5de2`. The downloaded archive matched all
+1,301 source blobs and executable modes against that tree. It contains a
+different hosted executable, SHA256
+`fe506c638478d173edd267422856b9fb02c8ab424b694b6c81554dce2a48caa6`.
+Its staged receipt records two 98,000-sat payouts, all 29 rejections, restart,
+zero peers and exits `[0, 0]`. All linked stage-log and receipt hashes passed.
+This artifact is distinct from the locally built executable above.
+
+The downloaded artifact ZIP SHA256 is
+`86dbe22d7bd4a5f3002443c52fb77fb1e3ad3cfc7db24e9c775c2a4cbfb88e24`.
+Local verification is `ci-3906-regtest/verified.json` in the repair packet.
+The hosted Clippy, formatting, dependency and contract jobs at this head passed.
+
+An additional [push check](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43333146583)
+failed before creating jobs. Its annotation identifies invalid YAML at
+`.github/workflows/main.yml:262`. That file at `3906a6e18` is byte-identical
+to base `dev` at `9b8e91ae1aadfaad08e7fccbfa895bcbf41c6620`.
+The plain `run` scalar contains `::` followed by spaces, which YAML treats as
+mapping syntax. Existing PyYAML 6.0.3 reproduced the parse failure at line 262.
+
+The repair changes this scalar to a block scalar. The complete YAML then parses.
+The validation receipt checks the exact test command, main-only push trigger,
+manual trigger and read-only contents permission. They are unchanged.
+No job, assertion, test filter or permission was removed or broadened.
+This syntax repair has no node synchronization or runtime impact: it changes
+only the representation of the existing CI command. The runtime source and
+binary identity above remain applicable. The receipt is
+`workflow-yaml-validation.json`; its before/after file SHA256 values are
+`95b794fdc5af87e688131852cbb449485877faf9f03e2c04aca234d1d3c862fa` and
+`aadf04d4bd016ef2cafbecf0d40fb51455f989a7553b4a451f72e0f60f10cc03`.
+
 ## ZMQ finding remains unlocalized
 
 The [original broad CI run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43249495342)
