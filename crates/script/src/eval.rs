@@ -166,7 +166,7 @@ pub(crate) fn tapscript_op_success(script: &[u8], flags: VerifyFlags) -> Result<
                 });
             }
         };
-        if is_op_success(op) {
+        if is_op_success(op) && !(op == OP_MULADDMOD_EXPERIMENTAL && flags.muladdmod_enabled()) {
             if flags.contains(VerifyFlags::DISCOURAGE_OP_SUCCESS) {
                 return Err(ScriptError::Invalid {
                     code: ScriptErrCode::DiscourageOpSuccess,
@@ -395,6 +395,39 @@ fn dispatch(
     }
 
     match op {
+        #[cfg(feature = "experimental-muladdmod")]
+        OP_MULADDMOD_EXPERIMENTAL
+            if sigversion == SigVersion::Tapscript && flags.muladdmod_enabled() =>
+        {
+            if stack.len() < 4 {
+                return Err(invalid_stack());
+            }
+            let left = validation_weight_left
+                .as_mut()
+                .ok_or(ScriptError::Invalid {
+                    code: ScriptErrCode::TapscriptValidationWeight,
+                })?;
+            *left = left
+                .checked_sub(crate::muladdmod::COST)
+                .ok_or(ScriptError::Invalid {
+                    code: ScriptErrCode::TapscriptValidationWeight,
+                })?;
+            if *left < 0 {
+                return Err(ScriptError::Invalid {
+                    code: ScriptErrCode::TapscriptValidationWeight,
+                });
+            }
+            let result = crate::muladdmod::evaluate(
+                &item_bytes(stack.peek_at(3).map_err(|_| invalid_stack())?),
+                &item_bytes(stack.peek_at(2).map_err(|_| invalid_stack())?),
+                &item_bytes(stack.peek_at(1).map_err(|_| invalid_stack())?),
+                &item_bytes(stack.peek_at(0).map_err(|_| invalid_stack())?),
+            )?;
+            for _ in 0..4 {
+                stack.pop().map_err(|_| invalid_stack())?;
+            }
+            push_bytes(stack, &result)?;
+        }
         OP_NOP => {}
         OP_CHECKLOCKTIMEVERIFY => {
             if flags.contains(VerifyFlags::CHECKLOCKTIMEVERIFY) {
@@ -1089,3 +1122,6 @@ fn check_multisig(
 
 #[cfg(test)]
 mod consensus_tests;
+
+#[cfg(all(test, feature = "experimental-muladdmod"))]
+mod muladdmod_tests;

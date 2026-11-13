@@ -40,6 +40,7 @@ bitcoin-rs-e2e.workspace = true
 windows-sys.workspace = true
 
 [features]
+experimental-muladdmod-regtest = ["bitcoin-rs-node/experimental-muladdmod-regtest"]
 usdt = ["bitcoin-rs-consensus/usdt"]
 
 default = ["fjall", "redb", "zmq"]

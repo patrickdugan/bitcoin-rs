@@ -955,3 +955,71 @@ fn active_ancestor_submit_is_duplicate() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn submit_and_generate_refuse_invalidated_blocks_and_mine_distinct_replacements() -> Result<()> {
+    let (state, mining) = regtest_mining()?;
+    mining.publish_generation();
+    let genesis = Network::Regtest.genesis_block();
+    let genesis_hash = Hash256::from(genesis.block_hash());
+    let payout = vec![0x51];
+
+    let first = mining.generate(bitcoin_rs_mining::GenerateRequest {
+        payout: payout.clone(),
+        count: 1,
+        max_tries: bitcoin_rs_mining::GenerateRequest::DEFAULT_MAX_TRIES,
+        selection: bitcoin_rs_mining::GenerateSelection::Ordered(Vec::new()),
+        submit: true,
+    })?;
+    let first_block = first
+        .first()
+        .ok_or_else(|| TestError::message("missing generated block"))?;
+    let first_hash = Hash256::from(first_block.hash);
+    let first_raw = bitcoin_rs_primitives::hex::hex_decode(&first_block.hex)
+        .map_err(|error| TestError::message(error.to_string()))?;
+    let first_payload = BlockPayload::from_raw(bytes::Bytes::from(first_raw))
+        .map_err(|error| TestError::message(error.to_string()))?;
+
+    bitcoin_rs_node::reorg::invalidate_block(
+        &state.chainstate(),
+        &state.chain_followers(),
+        first_hash,
+    )
+    .map_err(|error| TestError::message(error.to_string()))?;
+
+    assert_eq!(
+        mining.submit_block(first_payload)?,
+        BlockValidationResult::DuplicateInvalid
+    );
+    assert_eq!(
+        state
+            .chainstate()
+            .applied_tip_snapshot()
+            .ok_or_else(|| TestError::message("missing applied tip"))?
+            .hash,
+        genesis_hash
+    );
+
+    let replacement = mining.generate(bitcoin_rs_mining::GenerateRequest {
+        payout,
+        count: 1,
+        max_tries: bitcoin_rs_mining::GenerateRequest::DEFAULT_MAX_TRIES,
+        selection: bitcoin_rs_mining::GenerateSelection::Mempool,
+        submit: true,
+    })?;
+    let replacement_hash = Hash256::from(
+        replacement
+            .first()
+            .ok_or_else(|| TestError::message("missing replacement block"))?
+            .hash,
+    );
+    assert_ne!(replacement_hash, first_hash);
+    let tree = state.chainstate().block_tree_reader();
+    let replacement_node = tree
+        .read()
+        .node_by_hash(replacement_hash)
+        .ok_or_else(|| TestError::message("missing replacement node"))?
+        .status;
+    assert_ne!(replacement_node, NodeStatus::Invalid);
+    Ok(())
+}

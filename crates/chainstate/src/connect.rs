@@ -112,7 +112,8 @@ fn check_contextual_header(
 ) -> core::result::Result<(), ApplyError> {
     let contextual_header_started =
         tracing::enabled!(tracing::Level::DEBUG).then(quanta::Instant::now);
-    let contextual_header_result = validate_contextual_block_header(handles, block, height, prior);
+    let contextual_header_result =
+        validate_contextual_block_header(handles, block, height, prior, block_hash);
     tracing::debug!(
         height,
         %block_hash,
@@ -1326,6 +1327,7 @@ fn validate_contextual_block_header(
     block: &Block,
     height: u32,
     prior: Option<&TipSnapshot>,
+    block_hash: Hash256,
 ) -> Result<(), ApplyError> {
     if height == 0 {
         return Ok(());
@@ -1338,6 +1340,23 @@ fn validate_contextual_block_header(
         ));
     };
     let tree = handles.block_tree.read();
+    if let Some(existing_id) = tree.lookup(block_hash)
+        && tree.node(existing_id).map_err(ApplyError::Chain)?.status
+            == bitcoin_rs_chain::NodeStatus::Invalid
+    {
+        return Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::KnownInvalidHeader { hash: block_hash },
+        ));
+    }
+    if tree.node(prior.tip_id).map_err(ApplyError::Chain)?.status
+        == bitcoin_rs_chain::NodeStatus::Invalid
+    {
+        return Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::InvalidParent {
+                parent: prior.tip_id,
+            },
+        ));
+    }
     bitcoin_rs_chain::validate_contextual_header(
         &tree,
         prior.tip_id,
@@ -1388,6 +1407,11 @@ pub(super) fn applied_header_tip(
         None => tree.insert_header(block.header, bitcoin_rs_chain::node::NodeStatus::Active)?,
     };
     let node = tree.node(node_id)?;
+    if node.status == bitcoin_rs_chain::NodeStatus::Invalid {
+        return Err(ApplyError::Chain(
+            bitcoin_rs_chain::ChainError::KnownInvalidHeader { hash: block_hash },
+        ));
+    }
     if node.height != height {
         return Err(ApplyError::Consensus(
             bitcoin_rs_consensus::ConsensusError::Bip {

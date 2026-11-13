@@ -313,18 +313,23 @@ class ModelEvidenceTests(unittest.TestCase):
         self.write_tool(body)
         record = self.run_check(timeout=1)
         self.assertEqual(record["evidence_rc"], 14)
-        pid_file = next(self.root.glob("target/apalache/**/descendant.pid"))
-        descendant = int(pid_file.read_text())
-        try:
-            stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
-        except (ProcessLookupError, FileNotFoundError):
-            stat = None
-        if stat is not None:
-            state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
-            self.assertEqual(state, "Z")
-        result = next(self.root.glob("target/apalache/**/result.json"))
-        self.assertEqual(json.loads(result.read_text()),
-                         {"k": 128, "native_rc": None, "evidence_rc": 14})
+        results = list(self.root.glob("target/apalache/**/result.json"))
+        self.assertEqual(len(results), 4)
+        self.assertEqual({json.loads(path.read_text())["k"] for path in results},
+                         {128, 64, 32, 16})
+        for result in results:
+            with self.subTest(run=result.parent):
+                outcome = json.loads(result.read_text())
+                self.assertIsNone(outcome["native_rc"])
+                self.assertEqual(outcome["evidence_rc"], 14)
+                descendant = int((result.parent / "descendant.pid").read_text())
+                try:
+                    stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
+                except (ProcessLookupError, FileNotFoundError):
+                    stat = None
+                if stat is not None:
+                    state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
+                    self.assertEqual(state, "Z")
 
     def test_parallel_execution_preserves_summary_order_and_worst_code_selection(self) -> None:
         expected_summary = {

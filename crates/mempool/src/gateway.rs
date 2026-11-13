@@ -286,7 +286,7 @@ impl PreparedAdmission {
                 &chain,
                 height,
                 request.locktime_cutoff,
-                VerifyFlags::STANDARD,
+                VerifyFlags::STANDARD.union(request.next_block_script_flags),
                 self.engine,
                 Some(&signature_cache),
             )

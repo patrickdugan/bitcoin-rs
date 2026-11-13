@@ -13,6 +13,7 @@ description = "bitcoin-rs :: mempool"
 workspace = true
 
 [features]
+experimental-muladdmod-regtest = ["bitcoin-rs-consensus/experimental-muladdmod-regtest"]
 
 default = []
 test-seam = []

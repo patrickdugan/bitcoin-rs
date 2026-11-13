@@ -1365,3 +1365,16 @@ fn empty_data_dir_is_rejected_by_config_validation() {
     };
     assert!(matches!(error, ConfigError::DataDirEmpty), "{error:?}");
 }
+
+#[cfg(feature = "experimental-muladdmod-regtest")]
+#[test]
+fn muladdmod_regtest_refuses_the_kernel_engine() {
+    let mut config = NodeConfig::default_for_network(bitcoin_rs_primitives::Network::Regtest);
+    config.validation.engine = ValidationEngine::Kernel;
+    assert!(matches!(
+        config.validate(),
+        Err(super::ConfigError::ExperimentalMuladdmodRequiresNative)
+    ));
+    config.validation.engine = ValidationEngine::Native;
+    assert!(config.validate().is_ok());
+}

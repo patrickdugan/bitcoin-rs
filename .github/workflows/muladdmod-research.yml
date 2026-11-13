@@ -1,0 +1,127 @@
+name: MULADDMOD research build
+
+on:
+  push:
+    branches: ['feat/experimental-muladdmod']
+  pull_request:
+    paths:
+      - '.github/workflows/muladdmod-research.yml'
+      - '.cargo/config.toml'
+      - 'crates/script/**'
+      - 'crates/consensus/**'
+      - 'crates/chainstate/**'
+      - 'crates/mempool/**'
+      - 'crates/node/**'
+      - 'bin/bitcoin-rs/**'
+      - 'scripts/research/muladdmod*.py'
+      - 'scripts/research/campaign/**'
+      - 'scripts/tests/test_muladdmod*.py'
+      - 'docs/research/muladdmod*'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: muladdmod-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  semantics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Record source and toolchain
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/muladdmod-tests
+          git rev-parse HEAD > /tmp/muladdmod-tests/commit.txt
+          rustc --version > /tmp/muladdmod-tests/toolchain.txt
+          cargo fmt --all --check
+      - name: Experimental Clippy lint gate
+        run: cargo clippy --locked -p bitcoin-rs-script --all-targets --features experimental-muladdmod -- -D warnings
+      - name: Claim admission and official Schnorr vectors
+        run: python3 -m unittest discover -s scripts/tests -p 'test_muladdmod*.py' -v
+      - name: Flag-off compatibility tests
+        run: cargo test --locked -p bitcoin-rs-script 2>&1 | tee /tmp/muladdmod-tests/flag-off.txt
+      - name: Arithmetic and complete Taproot witness tests
+        run: cargo test --locked -p bitcoin-rs-script --features experimental-muladdmod 2>&1 | tee /tmp/muladdmod-tests/script.txt
+      - name: Consensus flag and cache tests
+        run: cargo test --locked -p bitcoin-rs-consensus --features experimental-muladdmod-regtest 2>&1 | tee /tmp/muladdmod-tests/consensus.txt
+      - name: Mempool admission tests
+        run: cargo test --locked -p bitcoin-rs-mempool --features experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-tests/mempool.txt
+      - name: Node engine isolation tests
+        run: cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest muladdmod 2>&1 | tee /tmp/muladdmod-tests/node.txt
+      - name: Valid-prefix and invalidated-header rejection proofs
+        run: |
+          set -euo pipefail
+          cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall,bitcoin-rs-consensus/experimental-muladdmod-regtest a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix 2>&1 | tee /tmp/muladdmod-tests/sync.txt
+          cargo test --locked -p bitcoin-rs-chainstate --no-default-features --features fjall invalidated_header_and_invalid_parent_cannot_validate_or_commit 2>&1 | tee -a /tmp/muladdmod-tests/sync.txt
+          cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,experimental-muladdmod-regtest submit_and_generate_refuse_invalidated_blocks_and_mine_distinct_replacements 2>&1 | tee -a /tmp/muladdmod-tests/node.txt
+      - name: ZMQ over-aligned command_t regression stress
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 16); do
+            cargo test --locked -p bitcoin-rs-node --no-default-features --features fjall,zmq zmq_publisher_handle_reports_active_metadata -- --quiet
+          done
+      - name: Require test results and record counts
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, re
+          root = pathlib.Path('/tmp/muladdmod-tests')
+          result = {}
+          for name in ['flag-off', 'script', 'consensus', 'mempool', 'node', 'sync']:
+              text = re.sub(r'\x1b\[[0-9;]*m', '', (root / (name + '.txt')).read_text())
+              rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)
+              assert rows, (name, 'no successful test summary')
+              totals = [sum(int(row[i]) for row in rows) for i in range(3)]
+              assert totals[0] > 0 and totals[1:] == [0, 0], (name, totals)
+              assert 'error: could not compile' not in text, name
+              result[name] = dict(zip(['passed', 'failed', 'ignored'], totals))
+          (root / 'test-summary.json').write_text(json.dumps(result, indent=2) + '\n')
+          print(json.dumps(result, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: muladdmod-tests-${{ github.run_id }}
+          path: /tmp/muladdmod-tests/
+
+  regtest-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Record exact build source
+        run: |
+          mkdir -p /tmp/muladdmod-build
+          git archive --format=tar HEAD | gzip -n > /tmp/muladdmod-build/source.tar.gz
+          git rev-parse HEAD > /tmp/muladdmod-build/commit.txt
+          rustc --version > /tmp/muladdmod-build/toolchain.txt
+      - name: Build optimized research executable
+        run: |
+          cargo build --locked --profile quickstart -p bitcoin-rs --no-default-features --features fjall,experimental-muladdmod-regtest 2>&1 | tee /tmp/muladdmod-build/build.txt
+          cp target/quickstart/bitcoin-rs /tmp/muladdmod-build/bitcoin-rs
+          target/quickstart/bitcoin-rs --version > /tmp/muladdmod-build/version.txt
+          (cd /tmp/muladdmod-build && sha256sum bitcoin-rs > binary.sha256)
+      - name: Real regtest admission, mining, and restart
+        run: python3 scripts/research/muladdmod_rpc.py target/quickstart/bitcoin-rs --report /tmp/muladdmod-build/regtest.json
+      - name: Funded small-field recovery and delayed settlement
+        run: python3 scripts/research/muladdmod_dispute_rpc.py target/quickstart/bitcoin-rs --report /tmp/muladdmod-build/dispute-small.json
+      - name: Funded 32-byte recovery and missed-window counterexample
+        run: python3 scripts/research/muladdmod_dispute_rpc.py target/quickstart/bitcoin-rs --wide --report /tmp/muladdmod-build/dispute-wide.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: muladdmod-linux-x86_64-${{ github.run_id }}
+          path: /tmp/muladdmod-build/

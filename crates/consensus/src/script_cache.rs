@@ -140,6 +140,19 @@ mod tests {
     }
 
     #[test]
+    fn experimental_rule_sets_have_distinct_execution_cache_keys() {
+        let cache = ScriptExecutionCache::new();
+        let ordinary = VerifyFlags::MANDATORY;
+        let experimental = ordinary.union(VerifyFlags::EXPERIMENTAL_MULADDMOD);
+        cache.insert(key(1), ordinary);
+        assert!(!cache.take(key(1), experimental));
+        assert!(cache.take(key(1), ordinary));
+        cache.insert(key(1), experimental);
+        assert!(!cache.take(key(1), ordinary));
+        assert!(cache.take(key(1), experimental));
+    }
+
+    #[test]
     fn insert_then_take_hits_exactly_once() {
         let cache = ScriptExecutionCache::new();
         cache.insert(key(1), VerifyFlags::MANDATORY);

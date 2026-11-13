@@ -40,6 +40,8 @@ impl VerifyFlags {
     pub const DISCOURAGE_UPGRADABLE_TAPROOT_VERSION: Self = Self(1 << 18);
     pub const DISCOURAGE_OP_SUCCESS: Self = Self(1 << 19);
     pub const DISCOURAGE_UPGRADABLE_PUBKEYTYPE: Self = Self(1 << 20);
+    /// Never included in STANDARD or MANDATORY; requires the experimental build feature.
+    pub const EXPERIMENTAL_MULADDMOD: Self = Self(1 << 21);
     pub const MANDATORY: Self = Self(
         Self::P2SH.0
             | Self::DERSIG.0
@@ -103,6 +105,10 @@ impl VerifyFlags {
         Self(self.0 | other.0)
     }
 
+    pub(crate) const fn muladdmod_enabled(self) -> bool {
+        cfg!(feature = "experimental-muladdmod") && self.contains(Self::EXPERIMENTAL_MULADDMOD)
+    }
+
     pub fn from_core_names(names: &str) -> Result<Self, ScriptError> {
         let mut flags = Self::NONE;
         for name in names
@@ -112,6 +118,7 @@ impl VerifyFlags {
         {
             flags = flags.union(match name {
                 "NONE" => Self::NONE,
+                "EXPERIMENTAL_MULADDMOD" => Self::EXPERIMENTAL_MULADDMOD,
                 "P2SH" => Self::P2SH,
                 "STRICTENC" => Self::STRICTENC,
                 "DERSIG" => Self::DERSIG,
@@ -169,6 +176,8 @@ macro_rules! script_errors {
 }
 
 script_errors! {
+    ExperimentalDisabled = "EXPERIMENTAL_DISABLED",
+    MulAddModEncoding = "MULADDMOD_ENCODING",
     EvalFalse = "EVAL_FALSE",
     Verify = "VERIFY",
     EqualVerify = "EQUALVERIFY",
@@ -404,6 +413,9 @@ fn verify_script(
     flags: VerifyFlags,
     checker: &mut TxSignatureChecker<'_>,
 ) -> Result<(), ScriptError> {
+    if flags.contains(VerifyFlags::EXPERIMENTAL_MULADDMOD) && !flags.muladdmod_enabled() {
+        return Err(invalid(ScriptErrCode::ExperimentalDisabled));
+    }
     if flags.contains(VerifyFlags::SIGPUSHONLY) && !is_push_only(script_sig) {
         return Err(invalid(ScriptErrCode::SigPushonly));
     }

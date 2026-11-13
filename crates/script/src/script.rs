@@ -1,4 +1,6 @@
 pub mod opcode {
+    /// Private research byte; remains OP_SUCCESS240 unless the experimental flag is active.
+    pub const OP_MULADDMOD_EXPERIMENTAL: u8 = 0xf0;
 
     macro_rules! opcodes {
         ($($(#[$doc:meta])* $visibility:vis $name:ident = $value:literal,)*) => {

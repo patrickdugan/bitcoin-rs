@@ -1,0 +1,1708 @@
+{
+  "campaign": "bitcoin-rs experimental OP_MULADDMOD security & consensus audit",
+  "pr": "https://github.com/patrickdugan/bitcoin-rs/pull/1",
+  "branch": "feat/experimental-muladdmod",
+  "initial_branch_head_sha": "1fa1ba6ab001e1337f19bb1bf0d614e940501fac",
+  "base_dev_sha": "9b8e91ae1aadfaad08e7fccbfa895bcbf41c6620",
+  "environment": {
+    "cpu_model": "AMD Ryzen AI 9 365 w/ Radeon 880M",
+    "logical_cpus": 20,
+    "wsl_memory_kb": 20479880,
+    "kernel": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "rustc_verbose": [
+      "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "binary: rustc",
+      "commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67",
+      "commit-date: 2026-10-13",
+      "host: x86_64-unknown-linux-gnu",
+      "release: 1.99.1",
+      "LLVM version: 23.1.1"
+    ],
+    "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
+    "python": "3.12.3",
+    "bitcoin_core": "Bitcoin Core daemon version v31.1.0 bitcoind"
+  },
+  "binaries_sha256": {
+    "bitcoin-rs-exp-1fa1ba6": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+    "bitcoin-rs-exp-fixed": "8a9db57972d6bb279dc8d81077e69c3bf72c49aaf8fe0998a0f443e4292d4d0b",
+    "bitcoin-rs-off-fixed": "276cb6068c5b1d0823ff13f821da31cdf038086931063d6ae0b956481a5debb7",
+    "script_oracle": "bc25ba8c907ccd3c8a63ec1358a272f4d6afc5743c8a4c91f60690a5c5db2dcf",
+    "script_oracle_off": "0e2687f6aea47a97c9bdca81b2a999562f683be49da880d17f90cc82a3d745b6",
+    "muladdmod_cost": "4f96188923d70f0751364476b867b2c8849ad19dd06cc46584c24bd45ec7e07b",
+    "bitcoind": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08"
+  },
+  "phase1_reproduction": {
+    "gate_exit_codes": {
+      "build_regtest": {
+        "rc": 0,
+        "elapsed_s": 703
+      },
+      "fmt": {
+        "rc": 0,
+        "elapsed_s": 24
+      },
+      "py_claim": {
+        "rc": 0,
+        "elapsed_s": 3
+      },
+      "py_all": {
+        "rc": 1,
+        "elapsed_s": 120
+      },
+      "oracle": {
+        "rc": 0,
+        "elapsed_s": 1
+      },
+      "t_script_off": {
+        "rc": 0,
+        "elapsed_s": 986
+      },
+      "t_script_on": {
+        "rc": 101,
+        "elapsed_s": 305
+      },
+      "t_consensus_on": {
+        "rc": 0,
+        "elapsed_s": 160
+      },
+      "t_consensus_off": {
+        "rc": 0,
+        "elapsed_s": 50
+      },
+      "t_mempool_on": {
+        "rc": 0,
+        "elapsed_s": 274
+      },
+      "t_node_on": {
+        "rc": 0,
+        "elapsed_s": 590
+      },
+      "t_sync": {
+        "rc": 0,
+        "elapsed_s": 287
+      },
+      "clippy_ws": {
+        "rc": 0,
+        "elapsed_s": 402
+      },
+      "clippy_consensus": {
+        "rc": 0,
+        "elapsed_s": 85
+      },
+      "clippy_script_on": {
+        "rc": 0,
+        "elapsed_s": 230
+      },
+      "clippy_consensus_on": {
+        "rc": 0,
+        "elapsed_s": 13
+      },
+      "clippy_mempool_on": {
+        "rc": 0,
+        "elapsed_s": 108
+      },
+      "clippy_node_on": {
+        "rc": 0,
+        "elapsed_s": 151
+      },
+      "audit": {
+        "rc": 1,
+        "elapsed_s": 6
+      },
+      "deny": {
+        "rc": 0,
+        "elapsed_s": 10
+      },
+      "t_crates": {
+        "rc": 1,
+        "elapsed_s": 2232
+      }
+    },
+    "oracle_vectors": {
+      "valid_vectors": 12037,
+      "malformed_vectors": 293,
+      "mismatches": 0
+    },
+    "cargo_audit": {
+      "advisories_found": 1,
+      "advisory_id": "RUSTSEC-2026-0418",
+      "crate": "libz-sys 1.1.30",
+      "scope": "optional rocksdb transitive build-script env leak; not linked into fjall regtest binary; pre-existing on origin/dev"
+    },
+    "cargo_deny": {
+      "exit_code": 0
+    },
+    "test_counts": {
+      "script_flag_off": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 3,
+        "passed": 81,
+        "failed": 0,
+        "ignored": 0
+      },
+      "script_flag_on": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 3,
+        "passed": 96,
+        "failed": 0,
+        "ignored": 0
+      },
+      "consensus_flag_on": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 4,
+        "passed": 136,
+        "failed": 0,
+        "ignored": 0
+      },
+      "consensus_flag_off": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 4,
+        "passed": 136,
+        "failed": 0,
+        "ignored": 0
+      },
+      "mempool_flag_on": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 3,
+        "passed": 476,
+        "failed": 0,
+        "ignored": 0
+      },
+      "node_flag_on_muladdmod": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 3,
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "chainstate_valid_prefix": {
+        "runner": "cargo-test",
+        "binaries_with_tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "workspace_ci_test_crates": {
+        "runner": "cargo-nextest",
+        "suites": 10,
+        "passed": 2318,
+        "failed": 2,
+        "skipped": 946
+      },
+      "node_full_clean_rerun": {
+        "runner": "cargo-nextest",
+        "suites": 1,
+        "passed": 383,
+        "failed": 0,
+        "skipped": 0
+      },
+      "python_claim_vectors": {
+        "ran": 9,
+        "elapsed_s": 0.973,
+        "ok": true
+      },
+      "python_all_repo_tests": {
+        "ran": 176,
+        "elapsed_s": 43.449,
+        "ok": true
+      },
+      "python_campaign_unit_tests": {
+        "ran": 13,
+        "elapsed_s": 0.379,
+        "ok": true
+      }
+    },
+    "regtest_fixtures": {
+      "regtest": {
+        "binary_sha256": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+        "funding_height": 102,
+        "script_bytes": null,
+        "rejections_verified": 2,
+        "restart_preserved_outputs": true
+      },
+      "dispute-small": {
+        "binary_sha256": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+        "funding_height": 433,
+        "script_bytes": 263,
+        "rejections_verified": 19,
+        "restart_preserved_outputs": true
+      },
+      "dispute-wide": {
+        "binary_sha256": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+        "funding_height": 433,
+        "script_bytes": 294,
+        "rejections_verified": 18,
+        "restart_preserved_outputs": true
+      }
+    }
+  },
+  "phase2_dispute_attacks": {
+    "binary_sha256": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+    "funding_txid": "976db0de47dabf93c16e6cc851c62e0ed1b5d904401257448d7286b01e63db1a",
+    "funding_height": 433,
+    "summary": {
+      "total_attempts": 164,
+      "node_accepted": 20,
+      "node_rejected": 144,
+      "unexpected": [],
+      "policy_observations": [
+        "settlement_outbids_recovery_rbf",
+        "rbf_recovery_higher_fee_nonsignaling",
+        "reconsiderblock_rpc"
+      ],
+      "reference_disagreements": [
+        "settlement_before_delay",
+        "settlement_conflicts_lower_fee",
+        "rbf_recovery_same_fee",
+        "delay1_recovery_after_settlement_broadcast"
+      ],
+      "elapsed_s": 97.0
+    },
+    "rule_histogram": {
+      "SCRIPT_ERR_SCHNORR_SIG": 48,
+      "SCRIPT_ERR_EQUALVERIFY": 26,
+      "accepted": 15,
+      "SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH": 14,
+      "SCRIPT_ERR_UNSATISFIED_LOCKTIME": 12,
+      "SCRIPT_ERR_SCHNORR_SIG_HASHTYPE": 8,
+      "SCRIPT_ERR_TAPSCRIPT_MINIMALIF": 8,
+      "SCRIPT_ERR_EVAL_FALSE": 5,
+      "SCRIPT_ERR_MULADDMOD_ENCODING": 4,
+      "SCRIPT_ERR_SCHNORR_SIG_SIZE": 4,
+      "non-script: insufficient fee": 3,
+      "SCRIPT_ERR_CHECKSIGVERIFY": 2,
+      "SCRIPT_ERR_CLEANSTACK": 2,
+      "SCRIPT_ERR_TAPROOT_WRONG_CONTROL_SIZE": 2,
+      "non-script: non-BIP68-final": 1,
+      "non-script: TestBlockValidity failed: bad-txns-nonfinal": 1,
+      "non-script: bad-txns-nonfinal": 1,
+      "non-script: TestBlockValidity failed: bad-txns-inputs-missingorspent": 1,
+      "non-script: bad-txns-inputs-missingorspent": 1
+    },
+    "reference_vs_native": {
+      "agree": 158,
+      "disagree": 0
+    },
+    "confirmed_protocol_and_operational_counterexamples": [
+      "noncanonical_d_congruent_claim_confiscated",
+      "false_claim_oversized_operand_settles",
+      "false_claim_nonminimal_modulus_settles",
+      "operator_backdoor_leaf_in_unverified_tree",
+      "operator_internal_key_keypath_bypass",
+      "third_party_redirects_sighash_none_recovery",
+      "settlement_outbids_recovery_rbf",
+      "delay1_settlement_valid_next_block",
+      "reorg14_settlement_on_fork_after_recovery_was_disconnected"
+    ]
+  },
+  "phase3_consensus_differential": {
+    "randomized_differential_runs": {
+      "phase3-differential-seed1": {
+        "cases": 300,
+        "by_kind": {
+          "tapscript": 272,
+          "p2wsh": 13,
+          "legacy_p2sh": 15
+        },
+        "by_shape": {
+          "if_exec": 25,
+          "sig": 17,
+          "multi": 26,
+          "success": 24,
+          "element": 21,
+          "else": 23,
+          "nested": 22,
+          "plain": 17,
+          "underflow": 29,
+          "budget": 21,
+          "if_skip": 21,
+          "stack": 26
+        },
+        "accept_on": 142,
+        "accept_off": 283,
+        "mismatch_rust_py_on": 0,
+        "mismatch_rust_py_off": 0,
+        "code_mismatch_on": 0,
+        "softfork_violations": 0,
+        "feature_off_build_mismatch": 0,
+        "flag_changed_verdict": 141,
+        "policy_on_accept": 118,
+        "policy_off_accept": 11,
+        "elapsed_s": 15.3,
+        "failures": 0
+      },
+      "phase3-differential-seed20261112": {
+        "cases": 10000,
+        "by_kind": {
+          "tapscript": 9005,
+          "legacy_p2sh": 502,
+          "p2wsh": 493
+        },
+        "by_shape": {
+          "else": 727,
+          "plain": 755,
+          "success": 746,
+          "multi": 744,
+          "underflow": 763,
+          "stack": 748,
+          "budget": 740,
+          "sig": 724,
+          "if_exec": 767,
+          "nested": 772,
+          "element": 772,
+          "if_skip": 747
+        },
+        "accept_on": 4816,
+        "accept_off": 9499,
+        "mismatch_rust_py_on": 0,
+        "mismatch_rust_py_off": 0,
+        "code_mismatch_on": 0,
+        "softfork_violations": 0,
+        "feature_off_build_mismatch": 0,
+        "flag_changed_verdict": 4683,
+        "policy_on_accept": 4070,
+        "policy_off_accept": 494,
+        "elapsed_s": 577.3,
+        "failures": 0
+      },
+      "phase3-differential-seed42": {
+        "cases": 5000,
+        "by_kind": {
+          "tapscript": 4524,
+          "p2wsh": 219,
+          "legacy_p2sh": 257
+        },
+        "by_shape": {
+          "element": 370,
+          "success": 394,
+          "plain": 330,
+          "if_exec": 419,
+          "if_skip": 413,
+          "underflow": 355,
+          "nested": 367,
+          "sig": 359,
+          "stack": 397,
+          "budget": 395,
+          "else": 350,
+          "multi": 375
+        },
+        "accept_on": 2443,
+        "accept_off": 4750,
+        "mismatch_rust_py_on": 0,
+        "mismatch_rust_py_off": 0,
+        "code_mismatch_on": 0,
+        "softfork_violations": 0,
+        "feature_off_build_mismatch": 0,
+        "flag_changed_verdict": 2307,
+        "policy_on_accept": 2049,
+        "policy_off_accept": 226,
+        "elapsed_s": 106.3,
+        "failures": 0
+      },
+      "phase3-differential-seed7": {
+        "cases": 10000,
+        "by_kind": {
+          "legacy_p2sh": 491,
+          "tapscript": 9020,
+          "p2wsh": 489
+        },
+        "by_shape": {
+          "success": 792,
+          "plain": 803,
+          "multi": 723,
+          "else": 648,
+          "if_skip": 752,
+          "if_exec": 747,
+          "nested": 773,
+          "underflow": 760,
+          "budget": 731,
+          "sig": 760,
+          "stack": 771,
+          "element": 760
+        },
+        "accept_on": 4893,
+        "accept_off": 9508,
+        "mismatch_rust_py_on": 0,
+        "mismatch_rust_py_off": 0,
+        "code_mismatch_on": 0,
+        "softfork_violations": 0,
+        "feature_off_build_mismatch": 0,
+        "flag_changed_verdict": 4615,
+        "policy_on_accept": 4101,
+        "policy_off_accept": 488,
+        "elapsed_s": 467.0,
+        "failures": 0
+      }
+    },
+    "total_randomized_cases": 25300,
+    "total_rust_vs_python_mismatches": 0,
+    "total_softfork_violations": 0,
+    "total_feature_off_build_mismatches": 0,
+    "core_test_vectors_activation_differential": {
+      "exact_verdict_comparisons": 1508,
+      "p2tr_0xf0_softfork_checks": 0
+    },
+    "live_bitcoin_core_31_1_differential": {
+      "cases": 50,
+      "by_family": {
+        "legacy": 4,
+        "p2sh": 10,
+        "segwit_v0": 9,
+        "taproot_keypath": 5,
+        "tapscript": 22
+      },
+      "block_accepted": 23,
+      "block_rejected": 27,
+      "consensus_mismatches_vs_core": 0,
+      "all_final_tips_identical": true,
+      "final_tips": {
+        "rs_exp": "330593d81fd646a3ec90970631f6cedbae303f34f2808fcd2f3b2b38be449160",
+        "core": "330593d81fd646a3ec90970631f6cedbae303f34f2808fcd2f3b2b38be449160",
+        "rs_off": "330593d81fd646a3ec90970631f6cedbae303f34f2808fcd2f3b2b38be449160"
+      },
+      "mempool_policy_differences_vs_core": 0,
+      "elapsed_s": 49.18
+    }
+  },
+  "phase4_computational_costs": {
+    "microbenchmarks": {
+      "k_ops_per_measurement": 2000,
+      "repetitions": 15,
+      "muladdmod_by_width": [
+        {
+          "width": 1,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 2530.5,
+          "ns_per_budget_unit": 50.61,
+          "witness_bytes_at_k": 108118
+        },
+        {
+          "width": 1,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 1664.1,
+          "ns_per_budget_unit": 33.28,
+          "witness_bytes_at_k": 108118
+        },
+        {
+          "width": 2,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 7211.8,
+          "ns_per_budget_unit": 144.24,
+          "witness_bytes_at_k": 108122
+        },
+        {
+          "width": 2,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 3170.0,
+          "ns_per_budget_unit": 63.4,
+          "witness_bytes_at_k": 108122
+        },
+        {
+          "width": 3,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 10002.3,
+          "ns_per_budget_unit": 200.05,
+          "witness_bytes_at_k": 108126
+        },
+        {
+          "width": 3,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 5515.3,
+          "ns_per_budget_unit": 110.31,
+          "witness_bytes_at_k": 108126
+        },
+        {
+          "width": 4,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 11124.6,
+          "ns_per_budget_unit": 222.49,
+          "witness_bytes_at_k": 108130
+        },
+        {
+          "width": 4,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 5250.6,
+          "ns_per_budget_unit": 105.01,
+          "witness_bytes_at_k": 108130
+        },
+        {
+          "width": 5,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 16137.4,
+          "ns_per_budget_unit": 322.75,
+          "witness_bytes_at_k": 108134
+        },
+        {
+          "width": 5,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 7130.2,
+          "ns_per_budget_unit": 142.6,
+          "witness_bytes_at_k": 108134
+        },
+        {
+          "width": 6,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 15309.0,
+          "ns_per_budget_unit": 306.18,
+          "witness_bytes_at_k": 108138
+        },
+        {
+          "width": 6,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 7134.4,
+          "ns_per_budget_unit": 142.69,
+          "witness_bytes_at_k": 108138
+        },
+        {
+          "width": 7,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 16622.9,
+          "ns_per_budget_unit": 332.46,
+          "witness_bytes_at_k": 108142
+        },
+        {
+          "width": 7,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 10038.6,
+          "ns_per_budget_unit": 200.77,
+          "witness_bytes_at_k": 108142
+        },
+        {
+          "width": 8,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 20387.2,
+          "ns_per_budget_unit": 407.74,
+          "witness_bytes_at_k": 108146
+        },
+        {
+          "width": 8,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 9239.2,
+          "ns_per_budget_unit": 184.78,
+          "witness_bytes_at_k": 108146
+        },
+        {
+          "width": 9,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 20668.9,
+          "ns_per_budget_unit": 413.38,
+          "witness_bytes_at_k": 108150
+        },
+        {
+          "width": 9,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 15921.1,
+          "ns_per_budget_unit": 318.42,
+          "witness_bytes_at_k": 108150
+        },
+        {
+          "width": 10,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 18872.2,
+          "ns_per_budget_unit": 377.44,
+          "witness_bytes_at_k": 108154
+        },
+        {
+          "width": 10,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 11415.5,
+          "ns_per_budget_unit": 228.31,
+          "witness_bytes_at_k": 108154
+        },
+        {
+          "width": 11,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 24363.2,
+          "ns_per_budget_unit": 487.26,
+          "witness_bytes_at_k": 108158
+        },
+        {
+          "width": 11,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 12957.6,
+          "ns_per_budget_unit": 259.15,
+          "witness_bytes_at_k": 108158
+        },
+        {
+          "width": 12,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 26832.2,
+          "ns_per_budget_unit": 536.64,
+          "witness_bytes_at_k": 108162
+        },
+        {
+          "width": 12,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14191.8,
+          "ns_per_budget_unit": 283.84,
+          "witness_bytes_at_k": 108162
+        },
+        {
+          "width": 13,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 30203.1,
+          "ns_per_budget_unit": 604.06,
+          "witness_bytes_at_k": 108166
+        },
+        {
+          "width": 13,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14890.6,
+          "ns_per_budget_unit": 297.81,
+          "witness_bytes_at_k": 108166
+        },
+        {
+          "width": 14,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 34229.3,
+          "ns_per_budget_unit": 684.59,
+          "witness_bytes_at_k": 108170
+        },
+        {
+          "width": 14,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 22961.2,
+          "ns_per_budget_unit": 459.22,
+          "witness_bytes_at_k": 108170
+        },
+        {
+          "width": 15,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 48341.8,
+          "ns_per_budget_unit": 966.84,
+          "witness_bytes_at_k": 108174
+        },
+        {
+          "width": 15,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 20748.7,
+          "ns_per_budget_unit": 414.97,
+          "witness_bytes_at_k": 108174
+        },
+        {
+          "width": 16,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 43842.5,
+          "ns_per_budget_unit": 876.85,
+          "witness_bytes_at_k": 108178
+        },
+        {
+          "width": 16,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 20799.3,
+          "ns_per_budget_unit": 415.99,
+          "witness_bytes_at_k": 108178
+        },
+        {
+          "width": 17,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 48096.6,
+          "ns_per_budget_unit": 961.93,
+          "witness_bytes_at_k": 108182
+        },
+        {
+          "width": 17,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 24843.4,
+          "ns_per_budget_unit": 496.87,
+          "witness_bytes_at_k": 108182
+        },
+        {
+          "width": 18,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 52898.3,
+          "ns_per_budget_unit": 1057.97,
+          "witness_bytes_at_k": 108186
+        },
+        {
+          "width": 18,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 22362.7,
+          "ns_per_budget_unit": 447.25,
+          "witness_bytes_at_k": 108186
+        },
+        {
+          "width": 19,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 46041.8,
+          "ns_per_budget_unit": 920.84,
+          "witness_bytes_at_k": 108190
+        },
+        {
+          "width": 19,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 12875.0,
+          "ns_per_budget_unit": 257.5,
+          "witness_bytes_at_k": 108190
+        },
+        {
+          "width": 20,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 29488.2,
+          "ns_per_budget_unit": 589.76,
+          "witness_bytes_at_k": 108194
+        },
+        {
+          "width": 20,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14394.8,
+          "ns_per_budget_unit": 287.9,
+          "witness_bytes_at_k": 108194
+        },
+        {
+          "width": 21,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 29659.0,
+          "ns_per_budget_unit": 593.18,
+          "witness_bytes_at_k": 108198
+        },
+        {
+          "width": 21,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14406.4,
+          "ns_per_budget_unit": 288.13,
+          "witness_bytes_at_k": 108198
+        },
+        {
+          "width": 22,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 29483.0,
+          "ns_per_budget_unit": 589.66,
+          "witness_bytes_at_k": 108202
+        },
+        {
+          "width": 22,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14452.3,
+          "ns_per_budget_unit": 289.05,
+          "witness_bytes_at_k": 108202
+        },
+        {
+          "width": 23,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 32411.4,
+          "ns_per_budget_unit": 648.23,
+          "witness_bytes_at_k": 108206
+        },
+        {
+          "width": 23,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 14938.3,
+          "ns_per_budget_unit": 298.77,
+          "witness_bytes_at_k": 108206
+        },
+        {
+          "width": 24,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 39980.6,
+          "ns_per_budget_unit": 799.61,
+          "witness_bytes_at_k": 108210
+        },
+        {
+          "width": 24,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 25675.8,
+          "ns_per_budget_unit": 513.52,
+          "witness_bytes_at_k": 108210
+        },
+        {
+          "width": 25,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 33835.7,
+          "ns_per_budget_unit": 676.71,
+          "witness_bytes_at_k": 108214
+        },
+        {
+          "width": 25,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 26590.3,
+          "ns_per_budget_unit": 531.81,
+          "witness_bytes_at_k": 108214
+        },
+        {
+          "width": 26,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 66062.3,
+          "ns_per_budget_unit": 1321.25,
+          "witness_bytes_at_k": 108218
+        },
+        {
+          "width": 26,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 32532.3,
+          "ns_per_budget_unit": 650.65,
+          "witness_bytes_at_k": 108218
+        },
+        {
+          "width": 27,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 69530.2,
+          "ns_per_budget_unit": 1390.6,
+          "witness_bytes_at_k": 108222
+        },
+        {
+          "width": 27,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 34640.1,
+          "ns_per_budget_unit": 692.8,
+          "witness_bytes_at_k": 108222
+        },
+        {
+          "width": 28,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 78505.4,
+          "ns_per_budget_unit": 1570.11,
+          "witness_bytes_at_k": 108226
+        },
+        {
+          "width": 28,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 41453.3,
+          "ns_per_budget_unit": 829.07,
+          "witness_bytes_at_k": 108226
+        },
+        {
+          "width": 29,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 76277.9,
+          "ns_per_budget_unit": 1525.56,
+          "witness_bytes_at_k": 108230
+        },
+        {
+          "width": 29,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 31073.0,
+          "ns_per_budget_unit": 621.46,
+          "witness_bytes_at_k": 108230
+        },
+        {
+          "width": 30,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 76694.4,
+          "ns_per_budget_unit": 1533.89,
+          "witness_bytes_at_k": 108234
+        },
+        {
+          "width": 30,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 38355.8,
+          "ns_per_budget_unit": 767.12,
+          "witness_bytes_at_k": 108234
+        },
+        {
+          "width": 31,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 78579.5,
+          "ns_per_budget_unit": 1571.59,
+          "witness_bytes_at_k": 108238
+        },
+        {
+          "width": 31,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 40398.7,
+          "ns_per_budget_unit": 807.97,
+          "witness_bytes_at_k": 108238
+        },
+        {
+          "width": 32,
+          "class": "max_modulus_b_all_ones",
+          "ns_per_op": 87207.2,
+          "ns_per_budget_unit": 1744.14,
+          "witness_bytes_at_k": 108242
+        },
+        {
+          "width": 32,
+          "class": "min_top_byte_modulus",
+          "ns_per_op": 39538.7,
+          "ns_per_budget_unit": 790.77,
+          "witness_bytes_at_k": 108242
+        }
+      ],
+      "muladdmod_special": [
+        {
+          "class": "m15_composite_1byte",
+          "ns_per_op": 1425.2,
+          "ns_per_budget_unit": 28.5
+        },
+        {
+          "class": "m17_prime_1byte",
+          "ns_per_op": 1374.7,
+          "ns_per_budget_unit": 27.49
+        },
+        {
+          "class": "m_2p255_minus_19",
+          "ns_per_op": 81439.6,
+          "ns_per_budget_unit": 1628.79
+        }
+      ],
+      "schnorr_checksigverify": {
+        "ns_per_op": 275083.3,
+        "ns_per_budget_unit": 5501.67
+      },
+      "mixed_arith_plus_schnorr": {
+        "ns_per_pair": 368436.7,
+        "ns_per_budget_unit": 3684.37
+      },
+      "unpriced_sha256_520": {
+        "ns_per_op": 838.4,
+        "script_bytes_per_op": 3,
+        "ns_per_witness_byte": 279.48
+      },
+      "block_sized_single_input": {
+        "ops": 74037,
+        "muladdmod_witness_bytes": 3998242,
+        "muladdmod_seconds": 5.9103,
+        "schnorr_witness_bytes": 3850133,
+        "schnorr_seconds": 324.0865
+      }
+    },
+    "full_block_benchmarks_summary": {
+      "baseline_annex_only_1in": {
+        "accepted": true,
+        "total_ops": 0,
+        "tx_weight": 3988046,
+        "median_wall_s": 0.1608,
+        "median_node_cpu_s": 0.11,
+        "cpu_over_baseline_s": 0.05,
+        "max_rss_hwm_kb": 144556
+      },
+      "muladdmod_w32_max_1in": {
+        "accepted": true,
+        "total_ops": 73845,
+        "tx_weight": 3988196,
+        "median_wall_s": 4.9437,
+        "median_node_cpu_s": 4.9,
+        "cpu_over_baseline_s": 4.84,
+        "max_rss_hwm_kb": 149968
+      },
+      "muladdmod_w32_max_500in": {
+        "accepted": true,
+        "total_ops": 70000,
+        "tx_weight": 3954222,
+        "median_wall_s": 1.0842,
+        "median_node_cpu_s": 11.54,
+        "cpu_over_baseline_s": 11.48,
+        "max_rss_hwm_kb": 149968
+      },
+      "muladdmod_p25519_1in": {
+        "accepted": true,
+        "total_ops": 73845,
+        "tx_weight": 3988196,
+        "median_wall_s": 5.3332,
+        "median_node_cpu_s": 5.25,
+        "cpu_over_baseline_s": 5.19,
+        "max_rss_hwm_kb": 149968
+      },
+      "muladdmod_w16_max_1in": {
+        "accepted": true,
+        "total_ops": 73845,
+        "tx_weight": 3988132,
+        "median_wall_s": 2.1701,
+        "median_node_cpu_s": 2.12,
+        "cpu_over_baseline_s": 2.06,
+        "max_rss_hwm_kb": 149968
+      },
+      "muladdmod_w1_composite_1in": {
+        "accepted": true,
+        "total_ops": 73845,
+        "tx_weight": 3988072,
+        "median_wall_s": 0.2644,
+        "median_node_cpu_s": 0.19,
+        "cpu_over_baseline_s": 0.13,
+        "max_rss_hwm_kb": 149968
+      },
+      "schnorr_1in": {
+        "accepted": true,
+        "total_ops": 76685,
+        "tx_weight": 3988151,
+        "median_wall_s": 402.7738,
+        "median_node_cpu_s": 405.34,
+        "cpu_over_baseline_s": 405.28,
+        "max_rss_hwm_kb": 133068
+      },
+      "schnorr_500in": {
+        "accepted": true,
+        "total_ops": 73000,
+        "tx_weight": 3952722,
+        "median_wall_s": 1.0354,
+        "median_node_cpu_s": 16.32,
+        "cpu_over_baseline_s": 16.26,
+        "max_rss_hwm_kb": 149968
+      },
+      "mixed_arith_schnorr_1in": {
+        "accepted": true,
+        "total_ops": 73166,
+        "tx_weight": 3988212,
+        "median_wall_s": 188.1961,
+        "median_node_cpu_s": 189.23,
+        "cpu_over_baseline_s": 189.17,
+        "max_rss_hwm_kb": 142336
+      },
+      "mixed_arith_schnorr_500in": {
+        "accepted": true,
+        "total_ops": 69000,
+        "tx_weight": 3984222,
+        "median_wall_s": 0.9608,
+        "median_node_cpu_s": 14.01,
+        "cpu_over_baseline_s": 13.95,
+        "max_rss_hwm_kb": 149968
+      }
+    },
+    "full_block_hardware": {
+      "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "nproc": 20,
+      "cpu": "AMD Ryzen AI 9 365 w/ Radeon 880M",
+      "mem_kb": 20479880
+    }
+  },
+  "phase5_bitvm_security_properties": {
+    "proptest_cases_per_property": 4096,
+    "proptest_suite_counts": {
+      "runner": "cargo-test",
+      "binaries_with_tests": 3,
+      "passed": 103,
+      "failed": 0,
+      "ignored": 0
+    },
+    "bounded_state_machine_pre_fix": {
+      "summary": {
+        "sequences": 1860,
+        "exhaustive_depth": 4,
+        "random_sequences": 300,
+        "random_depth": 7,
+        "actions": "MERSX",
+        "delay": 2,
+        "violations": 1,
+        "violation_types": [
+          "MODEL",
+          "TIMELOCK"
+        ],
+        "steps_executed": 7960,
+        "recoveries_confirmed": 165,
+        "settlements_confirmed": 100,
+        "elapsed_s": 1370.6,
+        "binary_sha256": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface"
+      },
+      "discovered_node_defect": "KnownInvalidHeader / DuplicateInvalid bypass on re-submitted or re-mined invalidated blocks in crates/node/src/mining.rs and crates/chainstate/src/connect.rs",
+      "violating_sequence": {
+        "seq": "EXMERSM",
+        "honest": true,
+        "funding_height": 4895,
+        "trace": [
+          {
+            "a": "E",
+            "verdict": null,
+            "h": 4896,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": false
+          },
+          {
+            "a": "X",
+            "verdict": "invalidated",
+            "h": 4891,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": false
+          },
+          {
+            "a": "M",
+            "verdict": null,
+            "h": 4892,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": false
+          },
+          {
+            "a": "E",
+            "verdict": null,
+            "h": 4893,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": false
+          },
+          {
+            "a": "R",
+            "verdict": false,
+            "h": 4893,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": false
+          },
+          {
+            "a": "S",
+            "verdict": true,
+            "h": 4893,
+            "R_conf": false,
+            "S_conf": false,
+            "R_pool": false,
+            "S_pool": true
+          },
+          {
+            "a": "M",
+            "verdict": null,
+            "h": 4894,
+            "R_conf": false,
+            "S_conf": true,
+            "R_pool": false,
+            "S_pool": false
+          }
+        ],
+        "violations": [
+          {
+            "type": "MODEL",
+            "step": 5,
+            "action": "S",
+            "predicted": false,
+            "node": true,
+            "reason": "ae6bf283e810e6ce6bca3ca4c1f5f0d9ace957e9ff5016202d3c46b393d5e273"
+          },
+          {
+            "type": "TIMELOCK",
+            "step": 6,
+            "height": 4894
+          }
+        ]
+      }
+    },
+    "bounded_state_machine_post_fix": {
+      "sequences": 1860,
+      "exhaustive_depth": 4,
+      "random_sequences": 300,
+      "random_depth": 7,
+      "actions": "MERSX",
+      "delay": 2,
+      "violations": 0,
+      "violation_types": [],
+      "steps_executed": 7960,
+      "recoveries_confirmed": 165,
+      "settlements_confirmed": 101,
+      "elapsed_s": 778.9,
+      "binary_sha256": "8a9db57972d6bb279dc8d81077e69c3bf72c49aaf8fe0998a0f443e4292d4d0b"
+    },
+    "mutation_testing": {
+      "mutants": 18,
+      "applied": 18,
+      "killed": 17,
+      "survived": [
+        "M14"
+      ],
+      "score": 0.944
+    },
+    "mutants": [
+      {
+        "id": "M01",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "charge 49 units",
+        "status": "killed",
+        "seconds": 37,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test eval::muladdmod_tests::signatures_and_arithmetic_debit_one_counter ... FAILED",
+          "test result: FAILED. 40 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M02",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "charge nothing",
+        "status": "killed",
+        "seconds": 31,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::signatures_and_arithmetic_debit_one_counter ... FAILED",
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test result: FAILED. 40 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M03",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "accept modulus 0/1",
+        "status": "killed",
+        "seconds": 29,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M04",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "accept non-minimal modulus",
+        "status": "killed",
+        "seconds": 26,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M05",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "accept operand equal to modulus",
+        "status": "killed",
+        "seconds": 28,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M06",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "skip reduction when sum == m",
+        "status": "killed",
+        "seconds": 28,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::unsigned_high_bit_and_composite_modulus_have_integer_semantics ... FAILED",
+          "test muladdmod::tests::maximum_width_carry_is_reduced_without_truncation ... FAILED",
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 39 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M07",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "drop lowest bit of each byte",
+        "status": "killed",
+        "seconds": 27,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test muladdmod::tests::maximum_width_carry_is_reduced_without_truncation ... FAILED",
+          "test muladdmod::tests::unsigned_high_bit_and_composite_modulus_have_integer_semantics ... FAILED",
+          "test muladdmod::tests::properties::canonical_operands_match_limb_reference_across_all_widths ... FAILED",
+          "test muladdmod::tests::properties::ring_identities_commutativity_and_distributivity_hold ... FAILED",
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 36 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M08",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "ignore addend c",
+        "status": "killed",
+        "seconds": 26,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test muladdmod::tests::maximum_width_carry_is_reduced_without_truncation ... FAILED",
+          "test muladdmod::tests::properties::canonical_operands_match_limb_reference_across_all_widths ... FAILED",
+          "test muladdmod::tests::properties::ring_identities_commutativity_and_distributivity_hold ... FAILED",
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 37 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M09",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "reject 32-byte moduli",
+        "status": "killed",
+        "seconds": 34,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::maximum_width_carry_is_reduced_without_truncation ... FAILED",
+          "test muladdmod::tests::properties::canonical_operands_match_limb_reference_across_all_widths ... FAILED",
+          "test muladdmod::tests::properties::ring_identities_commutativity_and_distributivity_hold ... FAILED",
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 38 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M10",
+        "file": "crates/script/src/muladdmod.rs",
+        "description": "drop carry propagation",
+        "status": "killed",
+        "seconds": 41,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::tests::maximum_width_carry_is_reduced_without_truncation ... FAILED",
+          "test muladdmod::tests::properties::canonical_operands_match_limb_reference_across_all_widths ... FAILED",
+          "test muladdmod::tests::properties::ring_identities_commutativity_and_distributivity_hold ... FAILED",
+          "test muladdmod::tests::independent_spiral_vectors_cover_every_width_and_canonical_rejection ... FAILED",
+          "test result: FAILED. 38 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M11",
+        "file": "crates/script/src/eval.rs",
+        "description": "execute in legacy / witness v0",
+        "status": "killed",
+        "seconds": 33,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::active::legacy_and_witness_v0_keep_their_previous_opcode_rules ... FAILED",
+          "test core_vectors::activating_muladdmod_preserves_every_core_vector_verdict ... FAILED",
+          "test result: FAILED. 59 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.27s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M12",
+        "file": "crates/script/src/eval.rs",
+        "description": "activated opcode still OP_SUCCESS",
+        "status": "killed",
+        "seconds": 32,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test muladdmod::active::residue_encoding_and_stack_underflow_fail_closed ... FAILED",
+          "test muladdmod::active::activated_opcode_loses_early_success_bypass ... FAILED",
+          "test muladdmod::active::complete_taproot_spend_checks_fused_arithmetic ... FAILED",
+          "test muladdmod::active::witness_serialization_and_annex_determine_the_shared_budget ... FAILED",
+          "test muladdmod::active::stack_effect_cleanstack_and_final_truth_are_preserved ... FAILED",
+          "test muladdmod::active::fixed_width_one_does_not_bypass_minimalif ... FAILED",
+          "test muladdmod::active::unsigned_negative_zero_requires_an_explicit_comparison ... FAILED",
+          "test muladdmod::active::dispute_properties::canonical_dispute_safety_completeness_and_replay_isolation ... FAILED",
+          "test result: FAILED. 53 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.61s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M13",
+        "file": "crates/script/src/eval.rs",
+        "description": "underflow check off by one",
+        "status": "killed",
+        "seconds": 30,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::three_item_stack_underflow_precedes_budget_exhaustion ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M14",
+        "file": "crates/script/src/eval.rs",
+        "description": "swap a and b (equivalent: multiplication commutes)",
+        "status": "survived",
+        "seconds": 48
+      },
+      {
+        "id": "M15",
+        "file": "crates/script/src/eval.rs",
+        "description": "swap b and c",
+        "status": "killed",
+        "seconds": 23,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M16",
+        "file": "crates/script/src/eval.rs",
+        "description": "budget allows one unit of overdraft",
+        "status": "killed",
+        "seconds": 23,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M17",
+        "file": "crates/script/src/eval.rs",
+        "description": "leave one operand on the stack",
+        "status": "killed",
+        "seconds": 24,
+        "lane": "-p bitcoin-rs-script --features experimental-muladdmod",
+        "failed_tests": [
+          "test eval::muladdmod_tests::exact_budget_is_debited_and_missing_budget_fails ... FAILED",
+          "test result: FAILED. 41 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s"
+        ],
+        "compile_error": false
+      },
+      {
+        "id": "M18",
+        "file": "crates/script/src/interpreter.rs",
+        "description": "flag silently ignored in unsupported builds",
+        "status": "killed",
+        "seconds": 49,
+        "lane": "-p bitcoin-rs-script",
+        "failed_tests": [
+          "test muladdmod::unsupported_build_refuses_an_explicit_experimental_flag ... FAILED",
+          "test result: FAILED. 48 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.08s"
+        ],
+        "compile_error": false
+      }
+    ]
+  },
+  "phase6_multinode_and_reorg": {
+    "three_node_run_summary": {
+      "passed": 33,
+      "failed": [],
+      "binaries": {
+        "A": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+        "B": "a6a3c4eeb3b27018c2c6d558580f34f927134dd248fc522f693e0459c98aface",
+        "C": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08"
+      }
+    },
+    "four_node_run_summary": {
+      "passed": 38,
+      "failed": [],
+      "binaries": {
+        "A": "8a9db57972d6bb279dc8d81077e69c3bf72c49aaf8fe0998a0f443e4292d4d0b",
+        "B": "8a9db57972d6bb279dc8d81077e69c3bf72c49aaf8fe0998a0f443e4292d4d0b",
+        "C": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08",
+        "D": "276cb6068c5b1d0823ff13f821da31cdf038086931063d6ae0b956481a5debb7"
+      },
+      "checks": [
+        {
+          "name": "peers_connected",
+          "passed": true,
+          "peers": {
+            "A": 3,
+            "B": 1,
+            "C": 1,
+            "D": 1
+          }
+        },
+        {
+          "name": "funding_propagates_to_B",
+          "passed": true
+        },
+        {
+          "name": "recovery_relays_A_to_B",
+          "passed": true
+        },
+        {
+          "name": "unupgraded_bitcoin_rs_rejects_recovery_by_policy",
+          "passed": true,
+          "note": "DISCOURAGE_OP_SUCCESS keeps 0xf0 spends out of unupgraded mempools"
+        },
+        {
+          "name": "A_confirms_recovery",
+          "passed": true
+        },
+        {
+          "name": "reorg1_A_adopts_longer_chain",
+          "passed": true,
+          "depth": 7
+        },
+        {
+          "name": "reorg1_recovery_rolled_back",
+          "passed": true
+        },
+        {
+          "name": "reorg1_settlement_confirmed",
+          "passed": true
+        },
+        {
+          "name": "reorg1_recovery_evicted_from_mempool",
+          "passed": true
+        },
+        {
+          "name": "reorg1_claim_spent_exactly_once",
+          "passed": true
+        },
+        {
+          "name": "reorg1_utxo_sets_equal",
+          "passed": true
+        },
+        {
+          "name": "reorg1_recovery_cannot_reenter",
+          "passed": true,
+          "reason": {
+            "code": -25,
+            "message": "bad-txns-inputs-missingorspent"
+          }
+        },
+        {
+          "name": "reorg2_B_rolls_back_settlement",
+          "passed": true
+        },
+        {
+          "name": "reorg2_recovery_confirmed_on_B",
+          "passed": true
+        },
+        {
+          "name": "reorg2_settlement_not_in_mempool",
+          "passed": true
+        },
+        {
+          "name": "reorg2_utxo_sets_equal",
+          "passed": true
+        },
+        {
+          "name": "reorg3_settlement_mature_on_A",
+          "passed": true
+        },
+        {
+          "name": "reorg3_csv_restarts_from_new_funding_height",
+          "passed": true,
+          "dry": {
+            "allowed": false,
+            "reject-reason": "non-BIP68-final",
+            "txid": "86363002be4ec81e63559243821b8890b61972e0632e5a4f51a2f124ea5d73f6",
+            "wtxid": "cb110c0ced46833af89545035490ecad6d12db3b98241936ceeb897bd3e71684"
+          },
+          "note": "the settlement that was mature on the abandoned branch is non-final again"
+        },
+        {
+          "name": "reorg3_recovery_still_available",
+          "passed": true
+        },
+        {
+          "name": "restart_A_preserves_tip",
+          "passed": true
+        },
+        {
+          "name": "restart_A_preserves_utxo",
+          "passed": true
+        },
+        {
+          "name": "restart_A_preserves_claims",
+          "passed": true
+        },
+        {
+          "name": "restart_B_preserves_tip",
+          "passed": true
+        },
+        {
+          "name": "restart_B_preserves_utxo",
+          "passed": true
+        },
+        {
+          "name": "restart_B_preserves_claims",
+          "passed": true
+        },
+        {
+          "name": "post_restart_propagation",
+          "passed": true
+        },
+        {
+          "name": "observers_follow_upgraded_chain",
+          "passed": true,
+          "observers": [
+            "C",
+            "D"
+          ]
+        },
+        {
+          "name": "unupgraded_miner_builds_block_with_false_arithmetic",
+          "passed": true,
+          "result": "{'hash': '1cd2e823f39da6c4f08d19f87f5bb87c0e8d60f62a69c08b2ce91ff49d7321a3'}"
+        },
+        {
+          "name": "upgraded_A_rejects_false_arithmetic_block",
+          "passed": true
+        },
+        {
+          "name": "upgraded_B_rejects_false_arithmetic_block",
+          "passed": true
+        },
+        {
+          "name": "unupgraded_D_accepts_false_arithmetic_block",
+          "passed": true
+        },
+        {
+          "name": "C_reorgs_to_upgraded_chain",
+          "passed": true
+        },
+        {
+          "name": "C_false_spend_rolled_back",
+          "passed": true
+        },
+        {
+          "name": "D_reorgs_to_upgraded_chain",
+          "passed": true
+        },
+        {
+          "name": "D_false_spend_rolled_back",
+          "passed": true
+        },
+        {
+          "name": "B_accepts_valid_arithmetic_block",
+          "passed": true
+        },
+        {
+          "name": "C_accepts_valid_arithmetic_block",
+          "passed": true
+        },
+        {
+          "name": "D_accepts_valid_arithmetic_block",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "defects_fixed_in_campaign": [
+    {
+      "id": "DEFECT-01",
+      "severity": "High (Node Chainstate / RPC Invalidation Integrity)",
+      "files": [
+        "crates/chainstate/src/connect.rs",
+        "crates/node/src/mining.rs"
+      ],
+      "summary": "Submitting or locally mining a block hash already marked NodeStatus::Invalid bypassed DuplicateInvalid and KnownInvalidHeader checks, re-connecting the invalidated block onto Chainstate while poisoning all subsequent active-chain descendants with NodeStatus::Invalid.",
+      "regression_tests": [
+        "crates/chainstate/src/connect/tests.rs::invalidated_header_and_invalid_parent_cannot_validate_or_commit",
+        "crates/node/tests/mining/submission.rs::submit_and_generate_refuse_invalidated_blocks_and_mine_distinct_replacements"
+      ]
+    },
+    {
+      "id": "DEFECT-02",
+      "severity": "Low (CI / Verification Coverage)",
+      "files": [
+        ".github/workflows/muladdmod-research.yml"
+      ],
+      "summary": "Push trigger had typo 'feat/experimental-muladdaddmod' instead of 'feat/experimental-muladdmod' and shared concurrency group cancelled push runs when PR runs started.",
+      "regression_tests": [
+        ".github/workflows/muladdmod-research.yml"
+      ]
+    },
+    {
+      "id": "DEFECT-03",
+      "severity": "Medium-High (Native Memory Safety / libzmq Over-Aligned AVX Store SIGSEGV)",
+      "files": [
+        ".cargo/config.toml",
+        ".github/workflows/muladdmod-research.yml"
+      ],
+      "summary": "Vendored zeromq-src (libzmq 4.3.4) omitted HAVE_POSIX_MEMALIGN on x86_64-unknown-linux-gnu, causing yqueue<command_t> to allocate 64-byte-aligned command_t chunks via 16-byte malloc and triggering SIGSEGV on GCC AVX vmovdqa stores in ypipe_t<command_t, 16>::write during SocketZmqPublisher drop (zmq_publisher_handle_reports_active_metadata).",
+      "regression_tests": [
+        "bitcoin-rs-node::state::tests::construction::zmq_publisher_handle_reports_active_metadata (16x CI loop)"
+      ]
+    },
+    {
+      "id": "DEFECT-04",
+      "severity": "Low (CI Workflow YAML & Rust 1.100.0 Clippy Compatibility)",
+      "files": [
+        ".github/workflows/main.yml",
+        "crates/script/src/checker.rs",
+        "crates/mempool/src/fee_estimator.rs",
+        "crates/p2p/src/addrman.rs"
+      ],
+      "summary": "Unquoted `:: ` in .github/workflows/main.yml:262 broke GitHub Actions YAML parsing on branch pushes, and Rust 1.100.0 Clippy flagged three pre-existing needless_bool / needless_range_loop constructs.",
+      "regression_tests": [
+        ".github/workflows/ci.yml (fmt, clippy, contracts, deny, test-crates)",
+        ".github/workflows/muladdmod-research.yml (semantics, regtest-build)"
+      ]
+    }
+  ]
+}

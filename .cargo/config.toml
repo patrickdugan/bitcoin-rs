@@ -1,0 +1,5 @@
+# Ensure vendored libzmq (zeromq-src 0.2.6+4.3.4) allocates 64-byte-aligned
+# yqueue<command_t> chunks via posix_memalign on Linux x86_64 instead of
+# 16-byte malloc (prevents SIGSEGV on GCC vmovdqa in ypipe_t<command_t>::write).
+[env]
+CXXFLAGS_x86_64_unknown_linux_gnu = { value = "-DHAVE_POSIX_MEMALIGN=1 -DZMQ_CACHELINE_SIZE=64", force = false }
