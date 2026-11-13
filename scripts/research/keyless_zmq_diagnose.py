@@ -27,10 +27,11 @@ def main():
     def save():
         (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
 
-    def command(name, argv, timeout):
+    def command(name, argv, timeout, environment=None):
         log = output / (name + '.log')
         process = subprocess.Popen(argv, cwd=root, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, start_new_session=True)
+                                   stderr=subprocess.STDOUT, start_new_session=True,
+                                   env=environment)
         try:
             data, _ = process.communicate(timeout=timeout)
             status = {'exit_code': process.returncode, 'timed_out': False}
@@ -46,11 +47,8 @@ def main():
     report['rustc'], _ = command('rustc', ['rustc', '-Vv'], 15)
     report['gdb_available'] = shutil.which('gdb')
     save()
-    if not report['gdb_available']:
-        report['status'] = 'blocked_gdb_not_installed'
-        save()
-        return
-    report['gdb'], _ = command('gdb-version', ['gdb', '--version'], 15)
+    if report['gdb_available']:
+        report['gdb'], _ = command('gdb-version', ['gdb', '--version'], 15)
     build, messages = command('build', [
         'cargo', 'test', '--locked', '--jobs', '2', '-p', 'bitcoin-rs-node',
         '--no-default-features', '--features', 'fjall,zmq', '--lib', '--no-run',
@@ -79,15 +77,51 @@ def main():
     shutil.copyfile(executable, output / 'node-unit-tests')
     case = 'state::tests::construction::zmq_publisher_handle_reports_active_metadata'
     report['test_case'] = case
-    for index in range(1, 7):
-        result, trace = command('gdb-' + str(index), [
+    environment = None
+    if report['gdb_available']:
+        report['backend'] = 'existing_gdb'
+        argv = [
             'gdb', '--batch', '--quiet',
             '-ex', 'set pagination off', '-ex', 'set confirm off',
             '-ex', 'set print thread-events off', '-ex', 'set disable-randomization off',
             '-ex', 'run', '-ex', 'thread apply all bt 40',
             '-ex', 'info registers', '-ex', 'info sharedlibrary',
-            '--args', str(executable), '--exact', case, '--nocapture'], 35)
-        result['inferior_sigsegv'] = bool(re.search(r'(received signal|terminated with signal) SIGSEGV', trace))
+            '--args', str(executable), '--exact', case, '--nocapture']
+    else:
+        compiler = shutil.which('cc')
+        report['backend'] = 'existing_c_compiler_signal_trace'
+        if not compiler:
+            report['status'] = 'blocked_no_existing_debugger_or_c_compiler'
+            save()
+            return
+        report['cc'], _ = command('cc-version', [compiler, '--version'], 15)
+        preload = output / 'signal-trace.so'
+        compiled, _ = command('compile-trace', [
+            compiler, '-shared', '-fPIC', '-O0', '-g', '-o', str(preload),
+            str(root / 'scripts/research/keyless_zmq_trace.c')], 30)
+        report['compile_trace'] = compiled
+        if compiled['exit_code'] != 0:
+            report['status'] = 'blocked_trace_compile_failed'
+            save()
+            return
+        environment = dict(os.environ)
+        environment['LD_PRELOAD'] = str(preload) + (
+            ':' + environment['LD_PRELOAD'] if environment.get('LD_PRELOAD') else '')
+        report['preload_sha256'] = hashlib.sha256(preload.read_bytes()).hexdigest()
+        argv = [str(executable), '--exact', case, '--nocapture']
+    for index in range(1, 7):
+        result, trace = command('trace-' + str(index), argv, 35, environment)
+        result['inferior_sigsegv'] = bool(re.search(
+            r'(received signal|terminated with signal) SIGSEGV|KEYLESS_SIGSEGV', trace))
+        if result['inferior_sigsegv'] and not report['gdb_available']:
+            addresses = []
+            for line in trace.splitlines():
+                if line.startswith(str(executable)):
+                    addresses.extend(re.findall(r'\(\+(0x[0-9a-fA-F]+)\)', line))
+            symbolizer = shutil.which('addr2line')
+            if symbolizer and addresses:
+                result['symbols'], _ = command('symbols-' + str(index), [
+                    symbolizer, '-f', '-C', '-e', str(executable), *addresses], 30)
         report['attempts'].append(result)
         save()
         if result['inferior_sigsegv'] or result['timed_out']:

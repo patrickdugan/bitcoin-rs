@@ -263,12 +263,19 @@ job log is retained as `github-test-crates-43333152503.json`.
 The green Keyless matrix does not override this failed broad gate.
 
 The PR's existing failed `test-crates` step remains unchanged. A failure-only
-diagnostic on this research branch now collects up to six bounded GDB trials
+diagnostic on this research branch collects up to six bounded native traces
 of the same test executable and preserves the executable, trace and digests.
-It uses an existing GDB only and installs no software. Its receipt explicitly
+It uses an existing GDB or a signal-backtrace library built by the existing C
+compiler, and installs no software. Its receipt explicitly
 sets `validation_pass` to false. It cannot convert the failed gate to success.
 No test or runtime implementation is changed by this diagnostic. The optional
 notification owner still has no chainstate transition authority (`SYNC-03`).
+
+Run [43336319575](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43336319575)
+at `074a236ff4f3f3c85f28b6c2592c459c80eaa721` reproduced the same 383-pass,
+one-crash node result. The initial diagnostic found no installed GDB and
+stopped without installing it. The compiler-backed fallback addresses that
+tool prerequisite and does not change the failing gate.
 
 The original test passed 100 nextest repetitions, 1,000 trials from an immutable
 test binary with four bounded child processes, and 40 heap-perturbed trials.
