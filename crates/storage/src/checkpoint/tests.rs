@@ -163,7 +163,6 @@ fn publication_failpoints_preserve_the_previous_current() -> TestResult {
         CheckpointFailpoint::ManifestWrite,
         CheckpointFailpoint::ManifestSync,
         CheckpointFailpoint::StageSync,
-        CheckpointFailpoint::GenerationRename,
         CheckpointFailpoint::GenerationRootSync,
         CheckpointFailpoint::CurrentTempWrite,
         CheckpointFailpoint::CurrentTempSync,

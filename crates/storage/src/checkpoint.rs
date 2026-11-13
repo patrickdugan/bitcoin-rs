@@ -168,7 +168,6 @@ pub enum CheckpointFailpoint {
     ManifestWrite,
     ManifestSync,
     StageSync,
-    GenerationRename,
     GenerationRootSync,
     CurrentTempWrite,
     CurrentTempSync,
@@ -176,14 +175,6 @@ pub enum CheckpointFailpoint {
     CurrentRootSync,
 }
 pub(crate) struct GenerationPaths {
-    #[cfg(any(
-        target_vendor = "apple",
-        target_os = "linux",
-        target_os = "android",
-        target_os = "redox"
-    ))]
-    pub staging: String,
-    pub final_dir: String,
     pub current_temp: String,
     pub directory: String,
 }

@@ -366,6 +366,40 @@ fn verify_flags_follow_activation_and_the_bip16_exception() {
     assert!(!exempt.contains(VerifyFlags::P2SH));
 }
 
+// VAL-02
+#[test]
+fn keyless_and_cat_activation_requires_each_feature_and_regtest() {
+    for network in [
+        Network::Mainnet,
+        Network::Testnet3,
+        Network::Testnet4,
+        Network::Signet,
+        Network::Regtest,
+    ] {
+        let flags = verify_flags(
+            network,
+            3_000_000,
+            Hash256::from_le_bytes(&[0x41; 32]),
+            SoftforkState {
+                csv_active: true,
+                segwit_active: true,
+            },
+        );
+        assert_eq!(
+            flags.contains(VerifyFlags::EXPERIMENTAL_TXCOMMIT),
+            network == Network::Regtest && cfg!(feature = "experimental-keyless-checksig-regtest")
+        );
+        assert_eq!(
+            flags.contains(VerifyFlags::EXPERIMENTAL_OP_CAT),
+            network == Network::Regtest && cfg!(feature = "experimental-op-cat-regtest")
+        );
+        let public_bits = flags.bits()
+            & !(VerifyFlags::EXPERIMENTAL_TXCOMMIT.bits()
+                | VerifyFlags::EXPERIMENTAL_OP_CAT.bits());
+        assert_eq!(public_bits, VerifyFlags::MANDATORY.bits());
+    }
+}
+
 #[test]
 fn structural_block_rules_hold_under_both_activation_states() {
     let duplicated = spend_tx(3, Vec::new());

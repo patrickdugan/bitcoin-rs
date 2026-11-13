@@ -4,7 +4,7 @@ use bitcoin_rs_primitives::{CODESEPARATOR_POSITION, Hash256};
 use sha2::Digest as _;
 use smallvec::SmallVec;
 
-use crate::checker::{SigVersion, TxSignatureChecker};
+use crate::checker::{SigVersion, TXCOMMIT_KEY, TxSignatureChecker};
 use crate::interpreter::{ScriptErrCode, ScriptError, VerifyFlags};
 use crate::script::{Instruction, instructions, minimal_push, opcode, push_data};
 use crate::stack::{ScriptItem, Stack};
@@ -166,7 +166,7 @@ pub(crate) fn tapscript_op_success(script: &[u8], flags: VerifyFlags) -> Result<
                 });
             }
         };
-        if is_op_success(op) {
+        if is_op_success(op) && !(op == OP_CAT && flags.op_cat_enabled()) {
             if flags.contains(VerifyFlags::DISCOURAGE_OP_SUCCESS) {
                 return Err(ScriptError::Invalid {
                     code: ScriptErrCode::DiscourageOpSuccess,
@@ -302,7 +302,9 @@ fn check_opcode_rules(
             });
         }
     }
-    if is_disabled(opcode_byte) {
+    if is_disabled(opcode_byte)
+        && !(opcode_byte == OP_CAT && sigversion == SigVersion::Tapscript && flags.op_cat_enabled())
+    {
         return Err(ScriptError::Invalid {
             code: ScriptErrCode::DisabledOpcode,
         });
@@ -641,6 +643,20 @@ fn dispatch(
             let top = stack.peek().map_err(|_| invalid_stack())?.clone();
             stack.insert_at(2, top).map_err(|_| invalid_stack())?;
         }
+        OP_CAT if sigversion == SigVersion::Tapscript && flags.op_cat_enabled() => {
+            let second = stack.pop().map_err(|_| invalid_stack())?;
+            let first = stack.pop().map_err(|_| invalid_stack())?;
+            let first = item_bytes(&first);
+            let second = item_bytes(&second);
+            if first.len() + second.len() > MAX_SCRIPT_ELEMENT_SIZE {
+                return Err(ScriptError::Invalid {
+                    code: ScriptErrCode::PushSize,
+                });
+            }
+            let mut joined = SmallVec::<[u8; 32]>::from_slice(&first);
+            joined.extend_from_slice(&second);
+            push_bytes(stack, &joined)?;
+        }
         OP_SIZE => {
             let top = stack.peek().map_err(|_| invalid_stack())?;
             let size =
@@ -916,6 +932,7 @@ fn eval_checksig(
         }
         SigVersion::Tapscript => {
             let mut success = !sig.is_empty();
+            let txcommit = flags.txcommit_enabled() && pubkey == TXCOMMIT_KEY;
             if success {
                 if let Some(left) = validation_weight_left.as_mut() {
                     *left -= VALIDATION_WEIGHT_PER_SIGOP_PASSED;
@@ -924,6 +941,10 @@ fn eval_checksig(
                             code: ScriptErrCode::TapscriptValidationWeight,
                         });
                     }
+                } else if txcommit {
+                    return Err(ScriptError::Invalid {
+                        code: ScriptErrCode::TapscriptValidationWeight,
+                    });
                 }
             }
             if pubkey.is_empty() {
@@ -939,6 +960,11 @@ fn eval_checksig(
                         tapleaf_hash,
                         code_separator.opcode_pos,
                     )?;
+                }
+            } else if txcommit {
+                if success {
+                    success =
+                        checker.check_txcommit(sig, tapleaf_hash, code_separator.opcode_pos)?;
                 }
             } else if flags.contains(VerifyFlags::DISCOURAGE_UPGRADABLE_PUBKEYTYPE) {
                 return Err(ScriptError::Invalid {
@@ -1089,3 +1115,6 @@ fn check_multisig(
 
 #[cfg(test)]
 mod consensus_tests;
+
+#[cfg(all(test, feature = "experimental-keyless-checksig"))]
+mod keyless_tests;

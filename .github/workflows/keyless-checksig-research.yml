@@ -1,0 +1,78 @@
+name: Keyless CHECKSIG research build
+
+on:
+  push:
+    branches: ['feat/keyless-checksig-regtest']
+  pull_request:
+    paths:
+      - '.github/workflows/keyless-checksig-research.yml'
+      - 'crates/primitives/**'
+      - 'crates/script/**'
+      - 'crates/consensus/**'
+      - 'crates/mempool/**'
+      - 'crates/node/**'
+      - 'bin/bitcoin-rs/**'
+      - 'scripts/research/keyless*.py'
+      - 'scripts/tests/test_keyless*.py'
+      - 'docs/research/keyless*.md'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: keyless-checksig-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  semantics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Formatting
+        run: cargo fmt --all --check
+      - name: Offline fixture and staging tests
+        run: python3 scripts/research/keyless_checksig_stage.py --profile offline --output /tmp/keyless-tests/offline
+      - name: Native semantics and feature isolation
+        run: python3 scripts/research/keyless_checksig_stage.py --profile semantics --output /tmp/keyless-tests/semantics --jobs 2 --build-timeout 1800
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: keyless-tests-${{ github.run_id }}
+          path: /tmp/keyless-tests/
+
+  regtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Record source
+        run: |
+          mkdir -p /tmp/keyless-build
+          git archive --format=tar HEAD | gzip -n > /tmp/keyless-build/source.tar.gz
+          git rev-parse HEAD > /tmp/keyless-build/commit.txt
+      - name: Funded transitions and rollback recovery
+        run: python3 scripts/research/keyless_checksig_stage.py --profile regtest --output /tmp/keyless-build/staging --jobs 2 --timeout 900 --build-timeout 1800
+      - name: Preserve tested executable
+        run: |
+          cp target/quickstart/bitcoin-rs /tmp/keyless-build/bitcoin-rs
+          (cd /tmp/keyless-build && sha256sum bitcoin-rs > binary.sha256)
+      - name: Public Testnet4 replay with research features compiled
+        run: python3 scripts/research/keyless_checksig_testnet4.py --source . --output /tmp/keyless-build/testnet4 --binary /tmp/keyless-build/bitcoin-rs --fixtures scripts/tests/data/keyless-testnet4 --replay-height 12
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: keyless-linux-x86_64-${{ github.run_id }}
+          path: /tmp/keyless-build/

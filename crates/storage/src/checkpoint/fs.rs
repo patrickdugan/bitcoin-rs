@@ -137,12 +137,6 @@ impl CheckpointRoot {
         sync_dir(&self.dir)
     }
 
-    #[cfg(any(
-        target_vendor = "apple",
-        target_os = "linux",
-        target_os = "android",
-        target_os = "redox"
-    ))]
     pub(crate) fn entry_exists(&self, name: &str) -> io::Result<bool> {
         match self.dir.symlink_metadata(name) {
             Ok(_) => Ok(true),

@@ -16,6 +16,8 @@ workspace = true
 
 default = []
 test-seam = []
+experimental-keyless-checksig-regtest = ["bitcoin-rs-consensus/experimental-keyless-checksig-regtest"]
+experimental-op-cat-regtest = ["bitcoin-rs-consensus/experimental-op-cat-regtest"]
 
 [dependencies]
 bitcoin-rs-primitives.workspace = true

@@ -1,0 +1,2 @@
+[env]
+CXXFLAGS_x86_64_unknown_linux_gnu = { value = "-DHAVE_POSIX_MEMALIGN=1 -DZMQ_CACHELINE_SIZE=64", force = false }

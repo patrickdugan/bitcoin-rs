@@ -98,6 +98,26 @@ jobs:
           cache-on-failure: true
       - uses: ./.github/actions/test-deps
       - run: ./scripts/ci-pr.sh test-crates
+      - name: Verify vendored ZMQ command alignment
+        if: ${{ !cancelled() }}
+        timeout-minutes: 8
+        run: python3 scripts/research/keyless_zmq_alignment.py --output "$RUNNER_TEMP/keyless-zmq-alignment"
+      - name: Repeat repaired ZMQ metadata case
+        if: success() && github.event_name == 'pull_request' && github.head_ref == 'feat/keyless-checksig-regtest'
+        timeout-minutes: 5
+        run: cargo nextest run --locked --build-jobs 2 --test-threads 2 --retries 0 --stress-count 100 -p bitcoin-rs-node --lib --no-default-features --features fjall,zmq -E 'test(zmq_publisher_handle_reports_active_metadata)'
+      - name: ZMQ transport owner tests
+        if: success()
+        timeout-minutes: 10
+        run: cargo nextest run --locked --build-jobs 2 --test-threads 2 --retries 0 --no-fail-fast -p bitcoin-rs-rpc --features zmq --lib -E 'test(zmq::)'
+      - name: Preserve ZMQ alignment evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: keyless-zmq-alignment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/keyless-zmq-alignment/
+          if-no-files-found: warn
+          retention-days: 7
 
   # ── Heavy lanes (merge and main only) ────────────────────────────
 

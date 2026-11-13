@@ -59,6 +59,14 @@ redb = [
 # chainstate's kernel feature is the kernel-capability propagator for the
 # chain stack and already forwards to `bitcoin-rs-consensus/kernel`.
 kernel = ["bitcoin-rs-chainstate/kernel"]
+experimental-keyless-checksig-regtest = [
+    "bitcoin-rs-consensus/experimental-keyless-checksig-regtest",
+    "bitcoin-rs-mempool/experimental-keyless-checksig-regtest",
+]
+experimental-op-cat-regtest = [
+    "bitcoin-rs-consensus/experimental-op-cat-regtest",
+    "bitcoin-rs-mempool/experimental-op-cat-regtest",
+]
 zmq = ["bitcoin-rs-rpc/zmq"]
 silent-payments = ["bitcoin-rs-rpc/silent-payments"]
 pool = ["bitcoin-rs-rpc/pool", "bitcoin-rs-mining/pool"]

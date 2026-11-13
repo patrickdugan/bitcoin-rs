@@ -2761,3 +2761,139 @@ fn expire_returns_none_when_fresh_and_some_when_stale() {
     );
     assert!(gateway.expire(AdmissionOrigin::Rpc, now).is_none());
 }
+
+#[cfg(any(
+    feature = "experimental-keyless-checksig-regtest",
+    feature = "experimental-op-cat-regtest"
+))]
+fn research_taproot_spend(leaf: &bitcoin::ScriptBuf, witness: Vec<Vec<u8>>) -> (Tx, TxOut) {
+    use bitcoin::secp256k1::Secp256k1;
+    use bitcoin::taproot::{LeafVersion, TaprootBuilder};
+
+    let internal = "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0"
+        .parse::<bitcoin::XOnlyPublicKey>()
+        .expect("BIP341 NUMS internal key");
+    let tree = TaprootBuilder::new()
+        .add_leaf(0, leaf.clone())
+        .expect("single leaf")
+        .finalize(&Secp256k1::verification_only(), internal)
+        .expect("complete tree");
+    let mut candidate = standard_tx(0x64);
+    candidate.inputs[0].script_sig = Script::new();
+    let mut stack = witness;
+    stack.push(leaf.to_bytes());
+    stack.push(
+        tree.control_block(&(leaf.clone(), LeafVersion::TapScript))
+            .expect("control block")
+            .serialize(),
+    );
+    candidate.inputs[0].witness = Witness::from_stack(stack);
+    let prevout = TxOut {
+        value: Amount::from_sat(11_000),
+        script_pubkey: Script::from_bytes(
+            bitcoin::ScriptBuf::new_p2tr_tweaked(tree.output_key()).to_bytes(),
+        ),
+    };
+    (candidate, prevout)
+}
+
+// VAL-02
+#[cfg(feature = "experimental-keyless-checksig-regtest")]
+#[test]
+fn keyless_admission_enforces_next_block_flags_and_exact_cache_identity() {
+    use bitcoin::hashes::Hash as _;
+    use bitcoin::taproot::{LeafVersion, TapLeafHash};
+    use bitcoin_rs_primitives::consensus_bytes;
+    use bitcoin_rs_script::VerifyFlags;
+    use sha2::{Digest as _, Sha256};
+
+    let mut script = vec![33, 2];
+    script.extend_from_slice(&Sha256::digest(b"BIPSpace/Keyless-CHECKSIG/TXCOMMIT-draft"));
+    script.push(0xac);
+    let leaf = bitcoin::ScriptBuf::from_bytes(script);
+    let (template, prevout) = research_taproot_spend(&leaf, vec![vec![0; 32]]);
+    let mut message = vec![0, 0];
+    message.extend_from_slice(&2_i32.to_le_bytes());
+    message.extend_from_slice(&0_u32.to_le_bytes());
+    message.extend_from_slice(&Sha256::digest(consensus_bytes(
+        &template.inputs[0].previous_output,
+    )));
+    message.extend_from_slice(&Sha256::digest(11_000_u64.to_le_bytes()));
+    let mut script_pubkey = vec![34];
+    script_pubkey.extend_from_slice(&prevout.script_pubkey);
+    message.extend_from_slice(&Sha256::digest(script_pubkey));
+    message.extend_from_slice(&Sha256::digest(u32::MAX.to_le_bytes()));
+    message.extend_from_slice(&Sha256::digest(consensus_bytes(&template.outputs[0])));
+    message.push(2);
+    message.extend_from_slice(&0_u32.to_le_bytes());
+    message.extend_from_slice(
+        &TapLeafHash::from_script(&leaf, LeafVersion::TapScript).to_byte_array(),
+    );
+    message.push(2);
+    message.extend_from_slice(&u32::MAX.to_le_bytes());
+    let tag = Sha256::digest(b"TapSighash");
+    let mut hash = Sha256::new();
+    hash.update(tag);
+    hash.update(tag);
+    hash.update(message);
+    let commitment = hash.finalize().to_vec();
+
+    for (active, altered) in [(true, false), (true, true), (false, false)] {
+        let cache = Arc::new(bitcoin_rs_consensus::ScriptExecutionCache::new());
+        let gateway = MempoolGateway::new(
+            Arc::new(RwLock::new(Mempool::new(MempoolLimits::default()))),
+            None,
+            ValidationEngine::Native,
+            Some(Arc::clone(&cache)),
+        );
+        let mut candidate_commitment = commitment.clone();
+        if altered {
+            candidate_commitment[0] ^= 1;
+        }
+        let (candidate, prevout) = research_taproot_spend(&leaf, vec![candidate_commitment]);
+        let mut request = admit_request(&gateway, &candidate, AdmissionOrigin::Rpc);
+        request.prevouts[0].1 = prevout;
+        let flags = if active {
+            VerifyFlags::MANDATORY.union(VerifyFlags::EXPERIMENTAL_TXCOMMIT)
+        } else {
+            VerifyFlags::MANDATORY
+        };
+        request.next_block_script_flags = flags;
+        let result = gateway.admit_transaction(request);
+        let accepted = active && !altered;
+        assert_eq!(
+            matches!(result, Ok(AdmitOutcome::Committed(_))),
+            accepted,
+            "{result:?}"
+        );
+        assert_eq!(cache.take(candidate.wtxid(), flags), accepted);
+        assert!(!cache.take(candidate.wtxid(), VerifyFlags::MANDATORY));
+    }
+}
+
+// VAL-02
+#[cfg(feature = "experimental-op-cat-regtest")]
+#[test]
+fn keyless_companion_cat_admission_enforces_the_feature_independently() {
+    use bitcoin_rs_script::VerifyFlags;
+
+    for (active, suffix) in [(true, b"cd"), (true, b"ce"), (false, b"cd")] {
+        let gateway = gateway_with(None);
+        let leaf = bitcoin::ScriptBuf::from_bytes(vec![0x7e, 4, b'a', b'b', b'c', b'd', 0x87]);
+        let (candidate, prevout) =
+            research_taproot_spend(&leaf, vec![b"ab".to_vec(), suffix.to_vec()]);
+        let mut request = admit_request(&gateway, &candidate, AdmissionOrigin::Rpc);
+        request.prevouts[0].1 = prevout;
+        request.next_block_script_flags = if active {
+            VerifyFlags::MANDATORY.union(VerifyFlags::EXPERIMENTAL_OP_CAT)
+        } else {
+            VerifyFlags::MANDATORY
+        };
+        let result = gateway.admit_transaction(request);
+        assert_eq!(
+            matches!(result, Ok(AdmitOutcome::Committed(_))),
+            active && suffix == b"cd",
+            "{result:?}"
+        );
+    }
+}

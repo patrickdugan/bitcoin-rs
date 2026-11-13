@@ -140,6 +140,8 @@ pub enum ConfigError {
         "validation engine `{engine}` is not supported by this build: bitcoinkernel support is not compiled in (enable the `kernel` feature)"
     )]
     ValidationEngineUnsupported { engine: ValidationEngine },
+    #[error("experimental Keyless CHECKSIG or OP_CAT regtest requires validation engine native")]
+    ExperimentalRegtestRequiresNative,
     #[error("--p2p-stale-tip-prefers-blocks requires --p2p-stale-tip-relay")]
     StaleTipPrefersBlocks,
     #[error(transparent)]
@@ -733,6 +735,11 @@ impl NodeConfig {
             return Err(ConfigError::StorageBackendUnsupported {
                 backend: self.storage.backend,
             });
+        }
+        if bitcoin_rs_consensus::verify_block::experimental_regtest_flags(self.network).bits() != 0
+            && self.validation.engine != ValidationEngine::Native
+        {
+            return Err(ConfigError::ExperimentalRegtestRequiresNative);
         }
         if !self.validation.engine.is_supported() {
             return Err(ConfigError::ValidationEngineUnsupported {

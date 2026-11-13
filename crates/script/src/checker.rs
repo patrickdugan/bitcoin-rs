@@ -18,6 +18,11 @@ use bitcoin_rs_primitives::{
 };
 
 const SIGHASH_ANYONECANPAY: u8 = 0x80;
+pub(crate) const TXCOMMIT_KEY: [u8; 33] = [
+    0x02, 0xa8, 0x6c, 0x31, 0xa6, 0x24, 0x71, 0x63, 0x38, 0x27, 0x9c, 0x99, 0xe4, 0xa1, 0xf8, 0xc2,
+    0x19, 0x15, 0xb0, 0x80, 0x33, 0x5d, 0xac, 0x54, 0xe9, 0x57, 0xed, 0x20, 0x53, 0xb8, 0xe7, 0x67,
+    0x76,
+];
 
 pub(crate) struct TxSignatureChecker<'a> {
     tx: &'a Tx,
@@ -214,6 +219,39 @@ impl<'a> TxSignatureChecker<'a> {
             })
     }
 
+    pub(crate) fn check_txcommit(
+        &self,
+        candidate: &[u8],
+        leaf_hash: Option<&Hash256>,
+        codesep_pos: u32,
+    ) -> Result<bool, ScriptError> {
+        if candidate.len() != 32 {
+            return Err(ScriptError::Invalid {
+                code: ScriptErrCode::TxCommitSize,
+            });
+        }
+        let leaf_hash = leaf_hash.ok_or_else(|| {
+            ScriptError::Verification("TXCOMMIT requires a tapscript leaf".to_owned())
+        })?;
+        let digest = self
+            .cache
+            .taproot_signature_hash_with_key_version(
+                self.input_index,
+                self.prevouts,
+                self.annex.as_deref(),
+                Some((*leaf_hash, codesep_pos)),
+                Sighash::Default,
+                2,
+            )
+            .map_err(|error| ScriptError::Verification(error.to_string()))?;
+        if candidate != digest.as_byte_array() {
+            return Err(ScriptError::Invalid {
+                code: ScriptErrCode::TxCommitMismatch,
+            });
+        }
+        Ok(true)
+    }
+
     #[must_use]
     pub(crate) fn check_locktime(&self, locktime: i64) -> bool {
         let tx_locktime = i64::from(self.tx.lock_time.to_consensus());
@@ -232,11 +270,7 @@ impl<'a> TxSignatureChecker<'a> {
             Some(inp) => inp,
             None => return false,
         };
-        if input.sequence.to_consensus() == SEQUENCE_FINAL {
-            return false;
-        }
-
-        true
+        input.sequence.to_consensus() != SEQUENCE_FINAL
     }
 
     #[must_use]
