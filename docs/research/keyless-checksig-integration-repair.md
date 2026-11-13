@@ -291,7 +291,8 @@ The baseline selects the original allocator and must report at least one
 misaligned live queue allocation. The repaired variant must report eight
 allocations aligned to the type's 64-byte requirement. The existing broad
 gate and metadata test remain unchanged, followed by 100 bounded repetitions
-of that same metadata test. Hosted before/after validation of this repair is
+of that same metadata test and the existing RPC/ZMQ transport owner tests.
+Hosted before/after validation of this repair is
 pending at this report revision; a captured trace alone is not a passing gate.
 
 The PR's existing failed `test-crates` step remains unchanged. A failure-only

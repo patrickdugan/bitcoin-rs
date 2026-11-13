@@ -73,7 +73,7 @@ def main():
                                '-I' + str(vendor / 'src'), '-I' + str(vendor / 'include'),
                                '-I' + sysbuild['out_dir'], *flags,
                                str(root / 'scripts/research/keyless_zmq_alignment.cpp'),
-                               str(archives[0]), '-o', str(program)], 0, 30)
+                               str(vendor / 'src/err.cpp'), '-o', str(program)], 0, 30)
         observed = json.loads(run(name, [str(program)], expected, 15))
         assert observed['required_alignment'] == 64
         assert observed['aligned'] is (expected == 0)

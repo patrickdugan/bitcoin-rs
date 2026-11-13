@@ -106,6 +106,10 @@ jobs:
         if: success() && github.event_name == 'pull_request' && github.head_ref == 'feat/keyless-checksig-regtest'
         timeout-minutes: 5
         run: cargo nextest run --locked --build-jobs 2 --test-threads 2 --retries 0 --stress-count 100 -p bitcoin-rs-node --lib --no-default-features --features fjall,zmq -E 'test(zmq_publisher_handle_reports_active_metadata)'
+      - name: ZMQ transport owner tests
+        if: success()
+        timeout-minutes: 10
+        run: cargo nextest run --locked --build-jobs 2 --test-threads 2 --retries 0 --no-fail-fast -p bitcoin-rs-rpc --features zmq --lib -E 'test(zmq::)'
       - name: Preserve ZMQ alignment evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
