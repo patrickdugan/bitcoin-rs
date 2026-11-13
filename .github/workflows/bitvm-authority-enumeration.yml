@@ -1,0 +1,55 @@
+name: BitVM authority enumeration
+
+on:
+  push:
+    branches: ['research/bitvm-authority-enumeration']
+  pull_request:
+    paths:
+      - '.github/workflows/bitvm-authority-enumeration.yml'
+      - 'scripts/research/bitvm_authority_enumeration.py'
+      - 'scripts/research/canonical_proof_authority.py'
+      - 'scripts/research/cpa_transition.py'
+      - 'scripts/research/keyless_checksig_rpc.py'
+      - 'scripts/research/keyless_state_machine.py'
+      - 'scripts/tests/test_bitvm_authority_enumeration.py'
+      - 'scripts/tests/test_keyless_state_machine.py'
+      - 'scripts/tests/test_cpa*.py'
+      - 'scripts/tests/data/bitvm-authority-enumeration/**'
+      - 'scripts/tests/data/cpa-v0-commitments.json'
+      - 'docs/research/bitvm-authority-enumeration.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bitvm-authority-enumeration-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  offline-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Record source
+        run: |
+          mkdir -p /tmp/ba-cpa-01
+          git rev-parse HEAD > /tmp/ba-cpa-01/commit.txt
+      - name: Study and CPA regression tests
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s scripts/tests -p 'test_bitvm_authority_enumeration.py' -v 2>&1 | tee /tmp/ba-cpa-01/study-tests.log
+          python3 -m unittest discover -s scripts/tests -p 'test_cpa*.py' -v 2>&1 | tee /tmp/ba-cpa-01/cpa-tests.log
+      - name: Reproduce bounded corpus and Script-oracle results
+        run: |
+          set -o pipefail
+          python3 scripts/research/bitvm_authority_enumeration.py --bitcoin-rs . --out /tmp/ba-cpa-01/generated --max-gates 5 --sample-limit 32 | tee /tmp/ba-cpa-01/enumeration.log
+          (cd /tmp/ba-cpa-01/generated && sha256sum -c -) < scripts/tests/data/bitvm-authority-enumeration/evidence.sha256
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: bitvm-authority-enumeration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/ba-cpa-01/
+          if-no-files-found: error

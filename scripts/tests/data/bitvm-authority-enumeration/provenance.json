@@ -1,0 +1,54 @@
+{
+  "CPA_head": "29ca519031fcd67f467881e16ba73e0eb1211759",
+  "dependency_head": "188e2d78fbb623a12a42772120a2aa4e437905c1",
+  "status": "Source pins for the BA-CPA-01 offline study integrated into bitcoin-rs; native Arena and HF execution remain unavailable.",
+  "verified_current_cpa_transition_git_blob": "1d619d49c7fde34f965b27bc99a4616f1e20d84c",
+  "source_files": [
+    {
+      "path": "scripts/research/canonical_proof_authority.py",
+      "sha256": "a7dcd6bbad68589247ebc4f5567654d83d0631e18f01911a21f4c00957e16076"
+    },
+    {
+      "path": "scripts/research/cpa_transition.py",
+      "sha256": "8cf6cd2eb274ec2c52f9e9f7d7563577977a2d0c61268c07770b6b18a15da761"
+    },
+    {
+      "path": "scripts/research/keyless_checksig_rpc.py",
+      "sha256": "2ba2df30bba64476acf1f71e2fb0b9950c0dbf2509a87ef40876a3a78b0d7e9a"
+    },
+    {
+      "path": "scripts/research/keyless_state_machine.py",
+      "sha256": "897bec48af6349485fd63bdef8da7ad5b6f8bcafbe61f0737695c20c67e4da2f"
+    },
+    {
+      "path": "scripts/tests/test_keyless_state_machine.py",
+      "sha256": "d1bad08be5ba20ee8ef70b70c6ecdf5b90ec62f5151d79921483a7c67ab743e4"
+    },
+    {
+      "path": "scripts/tests/test_cpa_commitments.py",
+      "sha256": "1e0c4125577a4b5fa00b57c88d2ab24938c452231ac6401e0064d629053aa7fd"
+    },
+    {
+      "path": "scripts/tests/test_cpa_transition.py",
+      "sha256": "60bdfc0ddcc1d1401686a583afda9c9a84dd34930a0315800dc00a3668d44481"
+    },
+    {
+      "path": "scripts/tests/data/cpa-v0-commitments.json",
+      "sha256": "29edc971123f3f92ded9b48e7850f693ec7026c98d977ab518699b56c69bb7c6"
+    },
+    {
+      "path": "docs/research/canonical-proof-authority-LICENSE",
+      "sha256": "dace98ca5b20fe2fae6f6bea338fcf0993b7173fdb4e39789c2592524eab20f8"
+    }
+  ],
+  "fresh_native_run": false,
+  "HF_verifier_run": false,
+  "Arena_native_run": false,
+  "original_study_bundle_sha256": "d23f2ccbef815dfd2f46e1426802b4e74afc145b62e86903d2b3965d49cf3b7b",
+  "original_study_script_sha256": "d429c580196cfca559c02c0e363eaae11317cc54e054da6c1639fba971175780",
+  "generated_evidence_bytes": {
+    "results.json": 6642,
+    "compiled_authorities.json": 13715,
+    "circuits.jsonl": 709758
+  }
+}
