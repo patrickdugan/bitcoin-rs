@@ -1,8 +1,14 @@
 # Keyless integration repair and validation
 
+The checkpoint and Linux GNU ZMQ allocation repairs passed at
+`cfd8935057e94643a35d394767fd1bc168c452e7`. Both broad CI and the Keyless
+workflow passed. Exact code-head results and downloaded artifacts are below.
+
 The checkpoint repair was first tested at
 `f90037ec1ba8ab8678097f33aaebc89471282830`.
-The final tested code is `13d3179e656a9f23b8da66625d4e16f3c064bca1`. Its runtime and exact current-toolchain gate are recorded below. The checkpoint repair follows the original
+The earlier locally tested research binary is from
+`13d3179e656a9f23b8da66625d4e16f3c064bca1`.
+The checkpoint repair follows the original
 `e616005407071dc1241bd17f891522f663cb1b34` integration and the independent
 [audit and shutdown-helper repair](keyless-checksig-local-audit.md).
 This work uses Keyless CHECKSIG / TXCOMMIT, separate from OP_MULADDMOD.
@@ -157,7 +163,8 @@ The original 112-file evidence packet was rechecked after this work:
 
 ## Final current-toolchain gate and runtime
 
-The final tested code is `13d3179e656a9f23b8da66625d4e16f3c064bca1`. Rust 1.100 also reported an existing
+The earlier local Rust-cleanup phase was tested at
+`13d3179e656a9f23b8da66625d4e16f3c064bca1`. Rust 1.100 also reported an existing
 fee-estimator range-loop lint and an address-manager boolean-guard lint.
 The estimator now iterates over the same fixed-array suffix with `iter_mut`
 and `skip`; offsets at or beyond the array length still update no entries.
@@ -253,8 +260,8 @@ binary identity above remain applicable. The receipt is
 
 The [original broad CI run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43249495342)
 recorded SIGSEGV in
-`zmq_publisher_handle_reports_active_metadata`. Its cause is not proven to be
-inherited or fixed. This change contains no speculative ZMQ runtime edit.
+`zmq_publisher_handle_reports_active_metadata`. The native trace and allocation checks below identify a pre-existing
+vendored build-configuration defect. The final repair selects aligned allocation.
 
 The [current-code broad run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43333152503)
 reproduced this SIGSEGV on Rust 1.100. Its node profile completed 383 passes,
@@ -292,16 +299,15 @@ misaligned live queue allocation. The repaired variant must report eight
 allocations aligned to the type's 64-byte requirement. The existing broad
 gate and metadata test remain unchanged, followed by 100 bounded repetitions
 of that same metadata test and the existing RPC/ZMQ transport owner tests.
-Hosted before/after validation of this repair is
-pending at this report revision; a captured trace alone is not a passing gate.
+Hosted before/after results are recorded below. The original crash,
+negative allocator case and repaired positive case remain separate receipts.
 
-The PR's existing failed `test-crates` step remains unchanged. A failure-only
-diagnostic on this research branch collects up to six bounded native traces
-of the same test executable and preserves the executable, trace and digests.
-It uses an existing GDB or a signal-backtrace library built by the existing C
-compiler, and installs no software. Its receipt explicitly
-sets `validation_pass` to false. It cannot convert the failed gate to success.
-No test or runtime implementation is changed by this diagnostic. The optional
+The original `test-crates` step was retained. A temporary failure-only
+diagnostic captured the same test with an existing-compiler signal-backtrace
+library. Its receipt sets `validation_pass` to false. It did not convert the
+failed gate to success. The collector is preserved at commit `e47175929` and
+in the local reproduction packet. It was removed from the active tree after
+the repair passed. No software was installed for this trace. The optional
 notification owner still has no chainstate transition authority (`SYNC-03`).
 
 Run [43336319575](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43336319575)
@@ -319,9 +325,9 @@ The frozen test binary SHA256 is `0b4c0645f90d79b9e200e0cd4c12dcf8aedb00b094cf7b
 
 The failing CI host used Ubuntu 26.04.1, nextest 0.9.143 and mold
 2.40.4+dfsg-2.1ubuntu1. Those differ from the installed local environment.
-The captured trace localizes the fault. The alignment regression and unchanged
-broad gate must verify the repair before a passing result can be claimed.
-Green Keyless staging alone cannot prove that this fault is eliminated.
+The trace localizes the fault; the allocation regression and unchanged
+broad gate verify this repair. The earlier local stress passes did not expose
+the hosted failure. The validated configuration scope is Linux x86_64 GNU.
 
 ## Reproduce and inspect
 
@@ -372,3 +378,84 @@ No optional RPC/ZMQ owner acquires chainstate authority (`SYNC-03`).
 NUMS P2TR is not P2MR. These results establish no general computation-proof
 application binding, BIP allocation/activation or production cost calibration.
 No mainnet wallet or real funds were used. No merge was performed.
+
+## Verified final code-head results
+
+Validated implementation and test head: `cfd8935057e94643a35d394767fd1bc168c452e7`.
+Its clean GitHub test merge is `ca4e01baf311c454b27f4c0b191b5bbeb9ea5409`, with
+the same tree `68895778a3def979c6bf53d158d51868539d4483`.
+The final publication adds this evidence, moves CI receipts to the per-job
+runner temporary directory, and removes the completed crash collector.
+The allocator fix, alignment proof and transport-owner tests are unchanged.
+
+The [broad CI run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43344553747)
+passed every fast gate, including `test-crates` and `ci-gate`.
+The [Keyless run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43344553938)
+passed both jobs. All three downloaded test/build/alignment archives matched
+their published SHA256 values. Their logs, receipts and executable hashes
+were independently checked. The funded source archive matched all 1,306 blobs
+and executable modes against the validated tree.
+
+| Verified execution or negative control | Result |
+| --- | --- |
+| Complete broad profiles plus RPC/ZMQ owner selection | 3,150 passed executions; no failures |
+| Native node profile within that total | 384 passed; 2 existing subprocess-entrypoint skips |
+| Additional metadata stress | 100/100 passed; zero retries |
+| RPC/ZMQ transport owner selection within that total | 21 passed |
+| Original allocator control, eight live queues | Exit 1; six allocations violate the 64-byte requirement |
+| Aligned allocator, eight live queues | Exit 0; all eight meet the 64-byte requirement |
+| Keyless offline and feature/semantics profiles | 35 Python and 511 Rust passes |
+| Funded regtest | Two 98,000-sat payouts, 29 rejections, restart, zero peers, exits `[0,0]` |
+
+These are executions across profiles; common cases repeat. Selection counts
+in filtered profiles include unselected tests. The broad node's two skips are
+the existing subprocess workers exercised by their parent tests. Normal
+merge-only binary, workspace and book lanes retain their existing scope.
+No assertion, deadline, warning gate or consensus check was relaxed.
+
+The original allocator's address remainders modulo 64 were
+`[32,48,0,16,32,48,0,16]`; the repaired control reports eight zero remainders.
+The required alignment comes from the locked C++ type, independently of
+Bitcoin Script. The vendored package and checksum are identical to base `dev`.
+This identifies a pre-existing dependency configuration defect. The Linux GNU
+target defaults now select the dependency's existing aligned allocator.
+If you override `CXXFLAGS_x86_64_unknown_linux_gnu`, retain
+`-DHAVE_POSIX_MEMALIGN=1 -DZMQ_CACHELINE_SIZE=64`.
+
+| Preserved executable | Source and SHA256 |
+| --- | --- |
+| Repaired standard node unit-test executable, ZMQ enabled | Validated code head; `45412e88abc4374ffbd7e054d601b416753ab4354cf9fd79197fc8cffd5d415d` |
+| Hosted research daemon, ZMQ disabled | Validated code head; `fe506c638478d173edd267422856b9fb02c8ab424b694b6c81554dce2a48caa6` |
+| MSI locally built research daemon, ZMQ disabled | Earlier source `13d3179e6`; `b0b67335ea4aca2243c5b550d60aa8435513b47a620a8de3be9f7505c8ffbaea` |
+
+The hosted research executable is byte-identical to the previously verified
+hosted research executable. The allocation correction applies to ZMQ-enabled
+C++ builds. Rust consensus code is unchanged from the earlier local phase.
+The daemon version is 0.15.0. Hosted Rust is 1.100.0; the captured native C
+compiler is Ubuntu GCC 15.2.0. The failing hosted environment was Linux 7.0
+with glibc 2.43. The completed MSI runs used Rust/Cargo 1.99.1, Python 3.12.3,
+Git 2.43.0 and WSL 6.18 with glibc 2.39. The separately approved Rust 1.100
+toolchain was isolated; the MSI default toolchain was not changed.
+
+The original local research packet remains intact. Later read-only WSL
+launches returned `Wsl/Service/E_UNEXPECTED`; no shared WSL restart was done.
+Existing Windows Rust 1.99/MSVC tools were found, but the offline fallback
+lacked the locked `ruint` dependency. The interrupted network-enabled fallback
+did not run. Thus the later alignment repair has hosted validation; it is
+not described as a new MSI native build.
+
+Public Testnet4 evidence remains separate from patched-regtest execution.
+The original packet verifies four genuine public headers and 15 transactions,
+including PoW, merkle and witness commitments, three tamper rejections and an
+offline stock Core replay. No experimental spend was broadcast publicly.
+Public Testnet4 genesis is
+`00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043`.
+Patched regtest genesis is
+`0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206`.
+NUMS P2TR remains distinct from P2MR; no BIP activation, general computation-
+proof application binding or production cost calibration is established.
+
+Local final receipts are `ci-cfd-counts-verified.json`,
+`ci-cfd-alignment/verified.json`, `ci-cfd-tests/verified.json` and
+`ci-cfd-regtest/verified.json`. The packet manifest, branch-only Git bundle,
+source archive and exact commands accompany them. Failed attempts are retained.
