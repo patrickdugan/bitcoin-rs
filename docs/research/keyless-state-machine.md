@@ -8,6 +8,10 @@ to select the payout and successor output. The
 four paths, confirms eight transitions, and checks rejection and restart
 behavior on isolated regtest.
 
+The [state lifecycle campaign](keyless-state-lifecycle.md) follows competing
+paths from the same reserve through controlled rollback, mempool recovery,
+and replacement. It reuses this program's statement and finite successors.
+
 This milestone uses the TXCOMMIT and CAT rules described in the
 [integration guide](keyless-checksig.md). Both experimental node features must
 be enabled. The proof in this program consists of disclosed field values.
@@ -272,26 +276,26 @@ checks derive the arithmetic and amounts from the program specification.
 Copying an unrelated rejection into another attack's entry fails validation.
 Both transaction links and the observed output values must agree across stages.
 
-### Local native evidence
+### Verified native evidence
 
-The local run on 2026-11-13 confirmed all eight transitions, checked all 39
-rejections, and preserved both restarts with zero peers and exits `[0, 0, 0]`.
-Its receipt is `target/keyless-state-machine/attempt-02/report.json`, which
-passed the staging runner's strict receipt validation. The program-identity
-substitution reached `EQUALVERIFY`. Each isolated recurrence-edge attack
-reached `NUMEQUALVERIFY`. The run used the new Python sources in the working
-tree; a clean-source staging run supplies the next source-pinned receipt.
+[Keyless CI run 43356286189](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43356286189)
+confirmed all eight transitions, checked all 39 rejections, and preserved both
+restarts with zero peers and exits `[0, 0, 0]`. The state-machine receipt passed
+the staging runner's strict validation. The program-identity substitution
+reached `EQUALVERIFY`, and each isolated recurrence-edge attack reached
+`NUMEQUALVERIFY`.
 
-That run used the verified baseline executable with SHA256
+The hosted executable has SHA256
 `fe506c638478d173edd267422856b9fb02c8ab424b694b6c81554dce2a48caa6`.
-Its build source was CI merge
-`6577bb622b0518b92a97f70d4e128c8e52858efe`, with tree
-`40c17990f993cdb662704b74eefd714cd7115242`. The same tree belongs to branch
-revision `556abe519be96ce75ab759efbd51cea88eee4690`. Local artifact verification
-is recorded in `target/ci-556abe5/native/verified.json` and
-`target/ci-556abe5/tests/verified.json`. Those baseline records establish the
-native executable's provenance. The compiler and state-machine fixture
-require their own source pin and staging results.
+The archived CI source is merge
+`2e8f5f1f588ccf3bc85e8c2a8399bd1a05368a98`, with tree
+`c9f0f775b4ff5b08376505bb010b63ca731ba726`. The same tree belongs to published
+revision `188e2d78fbb623a12a42772120a2aa4e437905c1`. Independent verification
+matched all 1,325 tracked source files and executable modes. The state-machine
+receipt's SHA256 is
+`2d9b138d78d0bbfab59670aec60d475a88476fc6e518f9946336676f0b2a237c`.
+The run's artifacts retain the executable, source archive, enclosing staging
+report, and fixture receipts.
 
 ## Run locally
 
@@ -305,7 +309,7 @@ python3 -m unittest discover -s scripts/tests \
   -p 'test_keyless_state_machine.py' -v
 ```
 
-From a clean checkout, build and run both live fixtures through staging:
+From a clean checkout, build and run the live fixtures through staging:
 
 ```sh
 python3 scripts/research/keyless_checksig_stage.py \
@@ -313,8 +317,8 @@ python3 scripts/research/keyless_checksig_stage.py \
   --jobs 2 --timeout 900 --build-timeout 1800
 ```
 
-The `regtest` and `full` profiles both run `keyless-regtest` and
-`state-machine-regtest`. The state-machine receipt is under
+The `regtest` and `full` profiles run `keyless-regtest`,
+`state-machine-regtest`, and `state-lifecycle-regtest`. The state-machine receipt is under
 `state-machine-regtest/report.json` in the staging output directory. Use
 `--profile full` to include the offline suites and native semantics matrix.
 For ongoing work, `--allow-dirty` records the source fingerprints. Every
@@ -324,7 +328,7 @@ For a direct run against an existing executable:
 
 ```sh
 python3 scripts/research/keyless_state_machine_rpc.py \
-  target/ci-556abe5/native/bitcoin-rs \
+  target/quickstart/bitcoin-rs \
   --output target/keyless-state-machine/direct-01
 ```
 
@@ -345,6 +349,8 @@ verifier and transcript encoding; the current program discloses every row.
 Arbitrary dynamic states need a construction for their successor program
 commitments, including initialization and canonical encoding. Longer
 verification chains need proof-fragment availability and a recovery rule
-for stalled execution. Fee changes, inclusion under load, and reorg handling
-need transaction campaigns. Production cost choices require cold-cache and
+for stalled execution. The lifecycle campaign exercises controlled rollback
+and a competing path through the current finite program. Fee changes,
+inclusion under load, and peer-driven reorg handling need further campaigns.
+Production cost choices require cold-cache and
 worst-case block measurements.

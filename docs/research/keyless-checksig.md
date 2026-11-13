@@ -10,7 +10,9 @@ spending transaction's Taproot signature hash. A surrounding Script program
 must establish which transaction is authorized. The live fixtures exercise
 a committed recipient allowlist and a
 [bounded state machine](keyless-state-machine.md) whose checked result selects
-its payout and successor program.
+its payout and successor program. A
+[lifecycle campaign](keyless-state-lifecycle.md) follows competing authorized
+paths through a controlled rollback and replacement.
 
 ## Native rule
 
@@ -60,7 +62,7 @@ BIP342 pin.
 | Script `experimental-op-cat` | Separate bounded Tapscript concatenation companion. |
 | Node `experimental-op-cat-regtest` | Selects the CAT companion on regtest. |
 
-Both live fixtures need both node features. Each script feature also
+All Keyless regtest fixtures need both node features. Each script feature also
 needs its corresponding verification flag. An unsupported requested flag fails
 closed. `MANDATORY` and `STANDARD` contain neither research flag. Public-network
 activation rules retain their existing selections.
@@ -132,6 +134,22 @@ committed output vectors. Every path uses NUMS P2TR and pays a 2,000-sat fee
 per transition. The milestone page defines the complete relation, rejection
 matrix, receipt fields, and limits of this finite successor construction.
 
+## State lifecycle milestone
+
+The [lifecycle campaign](keyless-state-lifecycle.md) places two authorized paths
+in competition for one funded reserve. It saves a solved competing block,
+confirms path A, and disconnects A's blocks through native `invalidateblock`.
+The disconnected parent and child must return to the mempool and survive a
+clean restart. Submitting the saved path-B block then exercises removal of
+the conflicting family before B's terminal spend confirms.
+
+The campaign records both chain-only and mempool-aware UTXO views. Its three
+restarts cover A's confirmed state, the restored funding state with an
+unconfirmed A family, and B's final state. A stale-state proof rebuilt for
+B's current successor checks the old-state guard after replacement. The
+lifecycle page defines the fixed-fee consequences and the boundary between
+this controlled rollback and peer-driven branch selection.
+
 ## Run locally
 
 Use Linux or WSL2 with Git, Python 3.10 or later, and the repository's stable
@@ -148,19 +166,23 @@ The profiles are independent:
 | Profile | Executed work |
 | --- | --- |
 | `offline` | Python fixtures, official signature-hash vectors, the F17 compiler's independent execution checks, and staging tests. |
-| `semantics` | Signature-hash tests, script feature matrix, consensus flags, mempool admission, node engine selection, and existing rejection and publication proofs. |
-| `regtest` | Build the native experimental executable and run `keyless-regtest` and `state-machine-regtest`. |
+| `semantics` | Signature-hash tests, script feature matrix, consensus flags, mempool admission, node engine selection, and existing publication, rejection, reorg-readmission, and conflict-removal proofs. |
+| `regtest` | Build the native experimental executable and run `keyless-regtest`, `state-machine-regtest`, and `state-lifecycle-regtest`. |
 | `full` | All of the above. |
 
 Each attempt requires a new output directory. `report.json` records the source
 revision, executed commands, tool versions, test counts, log digests, and binary
-identity. The two live steps retain `keyless-regtest.json` and
-`state-machine-regtest/report.json`. An incomplete receipt, skipped test,
+identity. The live steps retain `keyless-regtest.json`,
+`state-machine-regtest/report.json`, and `state-lifecycle-regtest/report.json`.
+An incomplete receipt, skipped test,
 empty Rust test selection, RPC method error, or timed-out command fails the
 run. Process groups are terminated on timeout or interruption. Each fixture
 starts isolated temporary node data, uses full validation, removes inherited
 node settings, disables DNS seeds, and
 checks zero connected peers. Its keys and scripts are public test material.
+
+The stage report and command log record a timeout. If cleanup requires
+`SIGKILL`, the interrupted fixture can leave its separate receipt incomplete.
 
 `--timeout` limits each Python or RPC command; `--build-timeout` limits each
 Cargo command. `--jobs 2` bounds Cargo build parallelism. The default values are
@@ -178,14 +200,18 @@ executable bytes. Keep the original build receipt when using that option.
 
 ```text
 Work on feat/keyless-checksig-regtest in patrickdugan/bitcoin-rs.
-Read AGENTS.md, docs/research/keyless-checksig.md, and
-docs/research/keyless-state-machine.md. Record the current revision and
+Read AGENTS.md, docs/research/keyless-checksig.md,
+docs/research/keyless-state-machine.md, and
+docs/research/keyless-state-lifecycle.md. Record the current revision and
 preserve concurrent work. Use a fresh staging output path.
 
 Run the offline profile, then the semantics and regtest profiles. Record
-positive executed-test counts and both funded-fixture receipts. Check the
+positive executed-test counts and every funded-fixture receipt. Check the
 state-machine receipt for all four paths, eight confirmed transitions,
 39 rejections, observed values and fees, and three zero daemon exit codes.
+Check the lifecycle receipt for the saved competitor, both UTXO views,
+restored parent-child mempool dependencies, removal of the displaced family,
+the fresh stale-state rejection, and four zero daemon exit codes.
 Reproduce a failure before changing code. Keep its logs and the smallest
 regression that checks an independently specified result.
 
@@ -214,7 +240,9 @@ provenance records.
 A general application needs an authenticated initial state and a construction
 for arbitrary successor programs, canonical commitments, proof-fragment
 availability, and a recovery rule for stalled multi-transaction verification.
-Fee adjustments and reorg margins need measured transaction campaigns.
+The lifecycle campaign covers controlled rollback, restored mempool state,
+and selection of a competing valid path. Fee adjustment, peer-driven reorg
+margins, and inclusion under load need further transaction campaigns.
 Selecting a production per-check cost requires cold-cache and worst-case
 block measurements, including repeated
 checks and failures late in script execution.
@@ -226,8 +254,11 @@ existing modules. The staging lane runs the mapped
 `apply_errors_classify_into_their_documented_dispositions` and
 `tick_recovers_rejected_frontier_without_publishing_unapplied_blocks` proofs.
 It also runs `a_window_with_an_invalid_middle_block_commits_only_the_valid_prefix`
-and both funded fixtures' restart checks. Reorganization and interoperability
-campaigns remain with their owning process lanes. The normal PR workflow owns
+and the funded fixtures' restart checks. The lifecycle lane also selects
+`invalidateblock_readmits_parent_before_child_in_dependency_order` and
+`remove_for_block_distinguishes_mined_from_conflicts`. Peer-driven reorganization,
+process-death, and interoperability campaigns retain their owning process
+lanes. The normal PR workflow owns
 the repository-wide dependency, Clippy, and crate-test gates.
 
 ## Public Testnet4 replay

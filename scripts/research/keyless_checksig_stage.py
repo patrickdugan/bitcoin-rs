@@ -54,6 +54,12 @@ def validate_tests(text: str, kind: str) -> dict:
 
 
 def validate_fixture(name: str, report: dict, binary_sha256: str) -> dict:
+    if name == 'state-lifecycle-regtest':
+        from keyless_state_lifecycle_receipt import validate
+        try:
+            return validate(report, binary_sha256)
+        except (AssertionError, AttributeError, KeyError, IndexError, OverflowError, TypeError, ValueError) as error:
+            raise EvidenceError(f'invalid state-lifecycle receipt: {error}') from error
     if name == 'state-machine-regtest':
         try:
             return validate_state_machine(report, binary_sha256)
@@ -544,6 +550,11 @@ def plan(profile: str, output: Path, binary: Path, jobs: int, prebuilt: bool) ->
             ('sync-publication', ['-p', 'bitcoin-rs-node', '--no-default-features', '--features',
                       'fjall,' + experiments, '--test', 'suite',
                       'tick_recovers_rejected_frontier_without_publishing_unapplied_blocks']),
+            ('reorg-readmission', ['-p', 'bitcoin-rs-node', '--no-default-features', '--features',
+                      'fjall,' + experiments, '--test', 'suite',
+                      'invalidateblock_readmits_parent_before_child_in_dependency_order']),
+            ('conflict-descendants', ['-p', 'bitcoin-rs-mempool', '--features', experiments, '--lib',
+                      'remove_for_block_distinguishes_mined_from_conflicts']),
         ]
         for name, args in suites:
             add(name, ['cargo', 'test', '--locked', '--jobs', str(jobs), *args], 'rust')
@@ -558,6 +569,8 @@ def plan(profile: str, output: Path, binary: Path, jobs: int, prebuilt: bool) ->
                                '--report', str(output / 'keyless-regtest.json')], 'fixture')
         add('state-machine-regtest', [sys.executable, 'scripts/research/keyless_state_machine_rpc.py',
                                      str(binary), '--output', str(output / 'state-machine-regtest')], 'fixture')
+        add('state-lifecycle-regtest', [sys.executable, 'scripts/research/keyless_state_lifecycle_rpc.py',
+                                       str(binary), '--output', str(output / 'state-lifecycle-regtest')], 'fixture')
     return steps
 
 
@@ -639,8 +652,8 @@ def main(argv=None) -> int:
                 if step['kind'] in ('python', 'rust'):
                     step['evidence'] = validate_tests((output / step['log']).read_text(), step['kind'])
                 elif step['kind'] == 'fixture':
-                    receipt = (output / 'state-machine-regtest' / 'report.json'
-                               if step['name'] == 'state-machine-regtest'
+                    receipt = (output / step['name'] / 'report.json'
+                               if step['name'] in ('state-machine-regtest', 'state-lifecycle-regtest')
                                else output / f"{step['name']}.json")
                     step['evidence'] = validate_fixture(step['name'], json.loads(receipt.read_text()),
                                                        report['binary']['sha256'])
