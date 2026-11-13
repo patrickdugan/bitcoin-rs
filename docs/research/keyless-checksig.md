@@ -203,6 +203,39 @@ and the funded fixture's restart checks. Reorganization and interoperability
 campaigns remain with their owning process lanes. The normal PR workflow owns
 the repository-wide dependency, Clippy, and crate-test gates.
 
+## Public Testnet4 replay
+
+The same feature-enabled research executable can validate genuine Testnet4
+blocks with both draft experiments disabled by network selection. Run this
+wallet-free replay with zero public peers:
+
+```sh
+python3 scripts/research/keyless_checksig_testnet4.py \
+  --source . --binary target/quickstart/bitcoin-rs \
+  --fixtures scripts/tests/data/keyless-testnet4 --replay-height 12 \
+  --output /tmp/keyless-testnet4-native-01
+```
+
+Use a fresh output directory. Replace `--binary` with `--core /path/to/bitcoind`
+to run the stock Core control. The Core control also supports installed Windows
+executables with `python`; it requests graceful RPC shutdown and requires zero
+exit status. The full staging runner still requires a POSIX host for process
+group cleanup.
+
+The checked-in public fixtures include the contiguous blocks 0 through 12 and a
+separate block-50000 witness sample, with URLs and digests. The replay verifies
+network genesis before node submissions, checks three fixture mutations, rejects
+an out-of-order block and a corrupted transaction Merkle root, accepts the
+original prefix, and checks tip persistence across restart. Each child must exit
+cleanly. The research workflow retains the native receipt alongside the exact
+source archive and executable.
+
+This is a bounded compatibility replay, not a public-network synchronization or
+an activation of TXCOMMIT or CAT. No synthetic outputs or spends are broadcast
+to Testnet4. Novel consensus spends remain in isolated patched regtest. The
+block-50000 sample does not establish the intervening chain. Fixture acquisition
+and scope are recorded in [the fixture provenance](../../scripts/tests/data/keyless-testnet4/README.md).
+
 ## Sources
 
 - [Pinned Spiral proposal](https://github.com/patrickdugan/Spiral/blob/cfafbec4ae072b859f0140b2487baac14fac3a44/BIPSpace/Keyless-CHECKSIG/bip-keyless-checksig.md)

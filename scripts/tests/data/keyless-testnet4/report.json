@@ -1,0 +1,108 @@
+{
+  "status": "passed",
+  "scope": "Cryptographically validated public fixtures; not a node replay receipt",
+  "public_network_identity_verified": "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043",
+  "source_url": "https://mempool.space/testnet4/api",
+  "acquired_at": "2026-11-13T02:37:23Z",
+  "replay_height": 12,
+  "blocks": [
+    {
+      "height": 0,
+      "hash": "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043",
+      "sha256": "0ce0108cbbf0eefaa6e34ca6e3005afc6083ac68a8543166ecfd1095c233908b",
+      "bytes": 261,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043/raw"
+    },
+    {
+      "height": 1,
+      "hash": "0000000012982b6d5f621229286b880e909984df669c2afabb102ce311b13f28",
+      "sha256": "6436855a829d5df2ac33dc1eccdb2e4d6b33fb7f27af9a05e784fd3a0c662d1e",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/0000000012982b6d5f621229286b880e909984df669c2afabb102ce311b13f28/raw"
+    },
+    {
+      "height": 2,
+      "hash": "000000001fed1a914651afc36574003c5300cac5df738c3976f28d54f7096253",
+      "sha256": "ee7f6580a692c0006d017d4b507a4e5935572dc84a9e937f626fac2ac82981be",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/000000001fed1a914651afc36574003c5300cac5df738c3976f28d54f7096253/raw"
+    },
+    {
+      "height": 3,
+      "hash": "000000008ddb4258595f9d8079a0b83fdc2816c9e3511acc739c16f5bce14e56",
+      "sha256": "180ac656aeb10b17465acc5f9e08ab0209ff9cddf16601b61ba118ec9674e192",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/000000008ddb4258595f9d8079a0b83fdc2816c9e3511acc739c16f5bce14e56/raw"
+    },
+    {
+      "height": 4,
+      "hash": "000000008f5794caa45c418a0184303e848e9d6756e4d77234c9aada983b4265",
+      "sha256": "81c9c1736567f18d3432e48873e6bcf3360d3d0f59811726bb6983c5ea8cc847",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/000000008f5794caa45c418a0184303e848e9d6756e4d77234c9aada983b4265/raw"
+    },
+    {
+      "height": 5,
+      "hash": "00000000ccefd2182ad4bb311c866233d32aae0a85f9568588ffd8e0432b7355",
+      "sha256": "5db34aa627ad2e4ab1b3817dbd1e8d308852b778d1d70789bbd15aeed5bb253b",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000ccefd2182ad4bb311c866233d32aae0a85f9568588ffd8e0432b7355/raw"
+    },
+    {
+      "height": 6,
+      "hash": "00000000ce4aa057b63710c3b986112392367a732449e329315d76ecf453b07a",
+      "sha256": "f30ce645f8d0602fdede802a63301f21f8a0a1a692cac6114085028d62377651",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000ce4aa057b63710c3b986112392367a732449e329315d76ecf453b07a/raw"
+    },
+    {
+      "height": 7,
+      "hash": "000000006da1338609eab6ea33c96a767b1654e1662c9c9216e102d535007ae8",
+      "sha256": "67e454ffe01cab05de8540671726d31247fbd4dcbbcdd82a41e7438256a2796a",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/000000006da1338609eab6ea33c96a767b1654e1662c9c9216e102d535007ae8/raw"
+    },
+    {
+      "height": 8,
+      "hash": "0000000032a6646a8daa73ee17a4bcd96617af516bfc00531c5dd1d8c75a719d",
+      "sha256": "307ff0caaaa58776a22090512abce7facb327d81b6f5a34bc2e41fac603946d2",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/0000000032a6646a8daa73ee17a4bcd96617af516bfc00531c5dd1d8c75a719d/raw"
+    },
+    {
+      "height": 9,
+      "hash": "00000000b2cf8b5f5add43d01c10c733d9692a791d929d1255d11273fcf16c59",
+      "sha256": "fd4f32b743235d3ee5a7c020acecf81ef0c909354f68fcca7ba1262eca36c81d",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000b2cf8b5f5add43d01c10c733d9692a791d929d1255d11273fcf16c59/raw"
+    },
+    {
+      "height": 10,
+      "hash": "000000004deda718e1471a0b5899303e84df0d7a437284b93d29698724f11a0c",
+      "sha256": "466956213569740f348832d80fa086c9c3f74ca193d7e9adcbf85dc714767881",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/000000004deda718e1471a0b5899303e84df0d7a437284b93d29698724f11a0c/raw"
+    },
+    {
+      "height": 11,
+      "hash": "00000000bd73032f3f786185969f641e8d0f2ac78dc32eff1e82ad4dbd00cffc",
+      "sha256": "7b5f10405eea0eaa67abad1feddf2a5b488f810cb88dba91eaa940712ade4e22",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000bd73032f3f786185969f641e8d0f2ac78dc32eff1e82ad4dbd00cffc/raw"
+    },
+    {
+      "height": 12,
+      "hash": "00000000f607d20abf4bb15a698f3b0359b8a1afc79e6ed5e54c310271cde93e",
+      "sha256": "61424ef3707f187e3a95261885296eade15893f40f141c08e55bd5d4390bc9eb",
+      "bytes": 258,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000f607d20abf4bb15a698f3b0359b8a1afc79e6ed5e54c310271cde93e/raw"
+    },
+    {
+      "height": 50000,
+      "hash": "00000000e2c8c94ba126169a88997233f07a9769e2b009fb10cad0e893eff2cb",
+      "sha256": "96fc6ad8cb9fe55e40b84b9310c986fa7cd7e0a5cd1c151069713b0bc0f5a3e2",
+      "bytes": 6069,
+      "raw_url": "https://mempool.space/testnet4/api/block/00000000e2c8c94ba126169a88997233f07a9769e2b009fb10cad0e893eff2cb/raw"
+    }
+  ]
+}

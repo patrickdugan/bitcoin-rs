@@ -30,6 +30,14 @@ def load_fixture(source):
 
 def core_class(f):
     class CoreNode(f.Node):
+        def stop(self):
+            try:
+                if self.process is not None and self.process.poll() is None:
+                    self.rpc('stop')
+                    self.process.wait(timeout=30)
+            finally:
+                super().stop()
+
         def start(self):
             command=[str(self.binary),'-regtest',f'-datadir={self.root}','-server=1',
                      '-listen=0','-connect=0','-dnsseed=0','-discover=0','-disablewallet=1',
