@@ -1,0 +1,60 @@
+name: Canonical Proof Authority research
+
+on:
+  push:
+    branches: ['feat/canonical-proof-authority-regtest']
+  pull_request:
+    paths:
+      - '.github/workflows/canonical-proof-authority.yml'
+      - 'scripts/research/canonical_proof_authority.py'
+      - 'scripts/research/cpa_*.py'
+      - 'scripts/research/keyless*.py'
+      - 'scripts/tests/test_cpa*.py'
+      - 'scripts/tests/data/cpa-*.json'
+      - 'crates/script/**'
+      - 'crates/primitives/**'
+      - 'crates/consensus/**'
+      - 'crates/node/**'
+      - 'bin/bitcoin-rs/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cpa-research-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  cpa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+      - name: Record tested source
+        run: |
+          mkdir -p /tmp/cpa-evidence
+          git rev-parse HEAD > /tmp/cpa-evidence/commit.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/cpa-evidence/source.tar.gz
+      - name: CPA commitment and independent Script tests
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s scripts/tests -p 'test_cpa*.py' -v 2>&1 | tee /tmp/cpa-evidence/unit-tests.log
+      - name: Build existing research node
+        run: |
+          cargo build --locked --jobs 2 --profile quickstart -p bitcoin-rs --no-default-features --features fjall,experimental-keyless-checksig-regtest,experimental-op-cat-regtest
+          cp target/quickstart/bitcoin-rs /tmp/cpa-evidence/bitcoin-rs
+          (cd /tmp/cpa-evidence && sha256sum bitcoin-rs > binary.sha256)
+      - name: Funded CPA transitions and adversarial native validation
+        run: python3 scripts/research/cpa_regtest.py --binary /tmp/cpa-evidence/bitcoin-rs --output /tmp/cpa-evidence/native --timeout 180
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: canonical-proof-authority-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/cpa-evidence/
+          if-no-files-found: error
