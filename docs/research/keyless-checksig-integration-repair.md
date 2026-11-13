@@ -226,6 +226,10 @@ The downloaded artifact ZIP SHA256 is
 `86dbe22d7bd4a5f3002443c52fb77fb1e3ad3cfc7db24e9c775c2a4cbfb88e24`.
 Local verification is `ci-3906-regtest/verified.json` in the repair packet.
 The hosted Clippy, formatting, dependency and contract jobs at this head passed.
+Both Keyless jobs completed successfully. The semantic artifact archive SHA256 is
+`d8f64ddf6fdc487b33c22f14b2af8d95dc37c601ed7ab3d966aebd37bad16356`.
+Independent validation checked every stage-log digest and counted 35 Python
+and 511 Rust passes. The receipt is `ci-3906-tests/verified.json`.
 
 An additional [push check](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43333146583)
 failed before creating jobs. Its annotation identifies invalid YAML at
@@ -252,6 +256,20 @@ recorded SIGSEGV in
 `zmq_publisher_handle_reports_active_metadata`. Its cause is not proven to be
 inherited or fixed. This change contains no speculative ZMQ runtime edit.
 
+The [current-code broad run](https://github.com/patrickdugan/bitcoin-rs/actions/runs/43333152503)
+reproduced this SIGSEGV on Rust 1.100. Its node profile completed 383 passes,
+one crashed test and two existing subprocess-entrypoint skips. The complete
+job log is retained as `github-test-crates-43333152503.json`.
+The green Keyless matrix does not override this failed broad gate.
+
+The PR's existing failed `test-crates` step remains unchanged. A failure-only
+diagnostic on this research branch now collects up to six bounded GDB trials
+of the same test executable and preserves the executable, trace and digests.
+It uses an existing GDB only and installs no software. Its receipt explicitly
+sets `validation_pass` to false. It cannot convert the failed gate to success.
+No test or runtime implementation is changed by this diagnostic. The optional
+notification owner still has no chainstate transition authority (`SYNC-03`).
+
 The original test passed 100 nextest repetitions, 1,000 trials from an immutable
 test binary with four bounded child processes, and 40 heap-perturbed trials.
 The original complete node profile also passed all 384 tests. The repaired
@@ -261,7 +279,7 @@ The frozen test binary SHA256 is `0b4c0645f90d79b9e200e0cd4c12dcf8aedb00b094cf7b
 
 The failing CI host used Ubuntu 26.04.1, nextest 0.9.143 and mold
 2.40.4+dfsg-2.1ubuntu1. Those differ from the installed local environment.
-A failing backtrace or reproduction in that environment is still needed to
+A diagnostic backtrace or local reproduction of that failure is still needed to
 claim a causal ZMQ repair. Green staging or a later green CI run cannot prove
 the old intermittent fault is eliminated.
 
