@@ -63,7 +63,7 @@ jobs:
           mkdir -p /tmp/keyless-build
           git archive --format=tar HEAD | gzip -n > /tmp/keyless-build/source.tar.gz
           git rev-parse HEAD > /tmp/keyless-build/commit.txt
-      - name: Funded native dynamic payout and restart
+      - name: Funded payouts, state transitions, and restarts
         run: python3 scripts/research/keyless_checksig_stage.py --profile regtest --output /tmp/keyless-build/staging --jobs 2 --timeout 900 --build-timeout 1800
       - name: Preserve tested executable
         run: |
