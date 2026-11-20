@@ -1,0 +1,220 @@
+name: Ark NestedMuSig2
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ark-nested-musig2.yml'
+      - 'tools/ark-nested-musig2/**'
+      - 'tools/nested-musig2/**'
+      - 'scripts/run-ark-*.py'
+      - 'scripts/nested_musig2_staging.py'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'bin/bitcoin-rs/tests/support/dependency_graph.rs'
+  push:
+    branches: ['dev', 'feat/ark-nested-musig2']
+    paths:
+      - '.github/workflows/ark-nested-musig2.yml'
+      - 'tools/ark-nested-musig2/**'
+      - 'tools/nested-musig2/**'
+      - 'scripts/run-ark-*.py'
+      - 'scripts/nested_musig2_staging.py'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'bin/bitcoin-rs/tests/support/dependency_graph.rs'
+  workflow_dispatch:
+    inputs:
+      nova:
+        description: Run the Nova prover lane against the regtest statements
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ark-nested-musig2-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: 0
+  CARGO_BUILD_JOBS: 4
+  RUST_BACKTRACE: 1
+  RUSTUP_TOOLCHAIN: 1.99.1
+  NOVA_REPOSITORY: patrickdugan/zk-rusto-no-bitcoino
+  NOVA_SOURCE_SHA: NOVA_SOURCE_SHA_PIN
+  NOVA_VK_DIGEST: NOVA_VK_DIGEST_PIN
+
+jobs:
+  conformance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.99.1
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+        with:
+          key: ark-nested-musig2-conformance
+      - name: Formatting and lints
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --locked -p bitcoin-rs-ark-nested-musig2 --all-targets -- -D warnings
+      - name: Unit, statement, signing and process-signer tests
+        run: |
+          set -o pipefail
+          cargo test --locked -p bitcoin-rs-ark-nested-musig2 2>&1 | tee "$RUNNER_TEMP/ark-tests.log"
+          python3 -m unittest discover -s scripts/tests -p 'test_ark_*.py' -v
+          grep -E '^test result:' "$RUNNER_TEMP/ark-tests.log" | while read -r line; do echo "::notice title=ark tests::$line"; done
+
+  interop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.99.1
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+        with:
+          key: ark-nested-musig2-interop
+          workspaces: |
+            . -> target
+            tools/ark-nested-musig2/interop -> target
+      - name: Build arkade-os/rust-sdk ark-core and this tool
+        run: |
+          cargo build --locked --release --manifest-path tools/ark-nested-musig2/interop/Cargo.toml
+          cargo build --locked --profile quickstart -p bitcoin-rs-ark-nested-musig2
+      - name: Compare default VTXO scripts with ark-core
+        run: |
+          python3 scripts/run-ark-interop.py \
+            --ark target/quickstart/ark-nm2 \
+            --arkade tools/ark-nested-musig2/interop/target/release/arkade-interop \
+            --output "$RUNNER_TEMP/ark-interop.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ark-interop-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ark-interop.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  regtest:
+    needs: conformance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.99.1
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+        with:
+          key: ark-nested-musig2-regtest
+      - name: Build the node and the Ark tool
+        run: |
+          mkdir -p "$RUNNER_TEMP/ark-build"
+          set -o pipefail
+          cargo build --locked --profile quickstart -p bitcoin-rs --no-default-features --features fjall 2>&1 | tail -3
+          cargo build --locked --profile quickstart -p bitcoin-rs-ark-nested-musig2 2>&1 | tail -3
+          git rev-parse HEAD > "$RUNNER_TEMP/ark-build/source-sha.txt"
+          sha256sum target/quickstart/bitcoin-rs target/quickstart/ark-nm2 > "$RUNNER_TEMP/ark-build/binaries.sha256"
+      - name: Verify dependency direction
+        run: cargo test --locked -p bitcoin-rs --no-default-features --features fjall --test suite g17_dependency_direction::workspace_dependency_direction_is_one_way -- --exact
+      - name: Install the pinned Core reference
+        run: bash scripts/install-bitcoind.sh --print-path
+      - name: Lifecycle on bitcoin-rs and Bitcoin Core
+        run: |
+          python3 scripts/run-ark-nested-musig2-regtest.py \
+            --bitcoin-rs target/quickstart/bitcoin-rs \
+            --bitcoind "$(bash scripts/install-bitcoind.sh --print-path)" \
+            --ark target/quickstart/ark-nm2 \
+            --output "$RUNNER_TEMP/ark-regtest"
+      - name: Native benchmark at 4, 16, 64 and 256 VTXOs
+        run: |
+          mkdir -p "$RUNNER_TEMP/ark-bench"
+          /usr/bin/time -v target/quickstart/ark-nm2 bench --sizes 4,16,64,256 --shapes nested,flat \
+            --out "$RUNNER_TEMP/ark-bench" > "$RUNNER_TEMP/ark-bench/bench.json" 2> "$RUNNER_TEMP/ark-bench/time.txt"
+      - name: Annotate results
+        if: always()
+        run: python3 scripts/run-ark-summary.py --regtest "$RUNNER_TEMP/ark-regtest" --bench "$RUNNER_TEMP/ark-bench"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ark-regtest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ark-build/
+            ${{ runner.temp }}/ark-regtest/
+            ${{ runner.temp }}/ark-bench/
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ark-tool-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/quickstart/ark-nm2
+          if-no-files-found: error
+          retention-days: 7
+
+  nova:
+    if: github.event_name == 'workflow_dispatch' && inputs.nova
+    needs: regtest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      RAYON_NUM_THREADS: 4
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ${{ env.NOVA_REPOSITORY }}
+          ref: ${{ env.NOVA_SOURCE_SHA }}
+          path: nova-source
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.99.1
+      - name: Build the pinned Nova prover
+        run: |
+          cd nova-source/integrations/ark-transition-nova
+          timeout 40m cargo build --locked --release
+          sha256sum target/release/ark-nova
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ark-regtest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: regtest-artifact
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ark-tool-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ark-tool
+      - name: Prove, verify and run the envelope controls
+        run: |
+          chmod +x ark-tool/ark-nm2
+          python3 scripts/run-ark-nova-mode.py \
+            --ark ark-tool/ark-nm2 \
+            --ark-nova nova-source/integrations/ark-transition-nova/target/release/ark-nova \
+            --scenario-dir regtest-artifact/ark-regtest/scenario \
+            --vk "$NOVA_VK_DIGEST" \
+            --prove-timeout 2400 \
+            --output "$RUNNER_TEMP/ark-nova"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: ark-nova-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ark-nova/
+          if-no-files-found: warn
+          retention-days: 14
