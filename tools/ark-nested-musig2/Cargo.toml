@@ -1,0 +1,39 @@
+[package]
+autotests = false
+name = "bitcoin-rs-ark-nested-musig2"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "Experimental Ark-style VTXO lifecycle harness with NestedMuSig2 cooperative signing"
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "ark-nm2"
+path = "src/main.rs"
+
+[dependencies]
+bitcoin-rs-nested-musig2 = { path = "../nested-musig2" }
+bitcoin-rs-primitives.workspace = true
+bitcoin-rs-script.workspace = true
+bitcoin.workspace = true
+bitcoin_hashes.workspace = true
+clap.workspace = true
+secp256k1.workspace = true
+serde.workspace = true
+sonic-rs.workspace = true
+thiserror.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"

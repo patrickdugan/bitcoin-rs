@@ -50,6 +50,7 @@ pub(crate) fn approved_layer(crate_name: &str) -> u8 {
         | "bitcoin-rs-snapshot"
         | "bitcoin-rs-p2pk-scan"
         | "bitcoin-rs-nested-musig2"
+        | "bitcoin-rs-ark-nested-musig2"
         | "contract-index" => 4,
         other => panic!("unclassified workspace crate `{other}`: add it to the layer table"),
     }
