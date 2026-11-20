@@ -268,6 +268,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--remote-users", default="2,3")
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument("--scale", type=int, help="run one N-user round and a mass unilateral exit instead of the lifecycle")
+    parser.add_argument("--shape", choices=("nested", "flat"), default="nested")
     parser.add_argument("--start-height", type=int, default=440,
                         help="height reached before the lifecycle; bitcoin-rs activates regtest CSV at 432")
     args = parser.parse_args()
@@ -280,7 +282,8 @@ def main():
         transient = Path(temporary)
         keys = transient / "keys"
         keys.mkdir(mode=0o700)
-        init = run_json(ark, "init", "--dir", keys, "--users", 5, "--network", "regtest")
+        users = args.scale or 5
+        init = run_json(ark, "init", "--dir", keys, "--users", users, "--network", "regtest")
         write_json(args.output / "public-keys.json", init)
         core_dir, rs_dir = transient / "core", transient / "rs"
         core_dir.mkdir(mode=0o700)
@@ -336,7 +339,7 @@ def main():
         while nodes.height() < args.start_height:
             nodes.mine([])
         coinbase, paid = faucet_coinbase(blocks[0])
-        funding = run_json(ark, "fund", "--dir", keys, "--network", "regtest", "--users", 5, "--rounds", 3,
+        funding = run_json(ark, "fund", "--dir", keys, "--network", "regtest", "--users", users, "--rounds", 1 if args.scale else 3,
                            "--coinbase", f"{coinbase['txid']}:{paid[0]['n']}",
                            "--coinbase-sat", btc_to_sat(paid[0]["value"]))
         write_json(args.output / "funding.json", funding)
@@ -361,10 +364,12 @@ def main():
             observed_paths.append(path)
         scenario_dir = args.output / "scenario"
         signing_started = time.monotonic()
+        mode = (["--scale", args.scale, "--shape", args.shape] if args.scale
+                else ["--remote-users", args.remote_users])
         summary = run_json(ark, "scenario", "--dir", keys, "--network", "regtest",
                            "--funding", args.output / "funding.json",
                            "--observed", observed_paths[0], observed_paths[1],
-                           "--remote-users", args.remote_users, "--out", scenario_dir)
+                           *mode, "--out", scenario_dir)
         signing_seconds = time.monotonic() - signing_started
         scenario = json.loads((scenario_dir / "scenario.json").read_text())
         txs = {tx["id"]: tx for tx in scenario["txs"]}
@@ -408,6 +413,7 @@ def main():
             "binary_sha256": {"bitcoin-rs": file_hash(node), "ark-nm2": file_hash(ark), "bitcoind": file_hash(core)},
             "core_version": reference.call("getnetworkinfo")["version"],
             "network": "regtest",
+            "mode": f"scale-{args.scale}-{args.shape}" if args.scale else "lifecycle",
             "funding_txid": funding["txid"],
             "funding_block": funding_block,
             "csv_probe": probe,

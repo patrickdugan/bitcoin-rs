@@ -15,12 +15,12 @@ use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence, Transaction, TxOut, Witness
 use serde::{Deserialize, Serialize};
 
 use crate::client::{Intent, Observed, RoleSigner};
-use crate::keys::{KeyNetwork, Participant, xonly_of};
+use crate::keys::{KeyNetwork, Participant};
 use crate::policy::{Shape, SignerId};
 use crate::remote::ProcessCosigner;
 use crate::round::{
-    Params, RoundSpec, SignedRound, build_round, exit_tx, fee_for, key_spend, key_spend_vsize,
-    output, sign_round, sweep_tx,
+    Params, RoundSpec, build_round, exit_tx, fee_for, key_spend, key_spend_vsize, output,
+    sign_round, sweep_tx,
 };
 use crate::scripts::{VtxoScript, key_path_script};
 use crate::signing::Cosigners;
@@ -1229,22 +1229,226 @@ fn anchor_child(
     Ok(tx)
 }
 
-pub fn signed_round_txids(round: &SignedRound) -> Vec<String> {
-    round
-        .all()
-        .iter()
-        .map(|tx| tx.compute_txid().to_string())
-        .collect()
-}
-
-pub fn owner_of(keys: &[[u8; 33]], key: &[u8; 33]) -> Option<usize> {
-    keys.iter().position(|candidate| candidate == key)
-}
-
-pub fn xonly_hex(key: &[u8; 33]) -> Result<String> {
-    Ok(
-        xonly_of(bitcoin_rs_nested_musig2::PlainPublicKey::from_slice(key)?)?
-            .serialize()
-            .to_lower_hex_string(),
-    )
+/// One round of `users` VTXOs from real funding, then a mass unilateral exit:
+/// the commitment, every tree level in its own block, and every user's exit
+/// after the delay, all submitted to both nodes.
+pub fn run_scale(
+    input: &ScenarioInput<'_>,
+    users: u16,
+    shape: Shape,
+    out: &Path,
+) -> Result<ScenarioOutput> {
+    let params = Params::regtest(shape);
+    let network = input.network;
+    let asp_key = Participant::load(&key_file(input.dir, SignerId::Asp), network)?;
+    let asp = asp_key.plain()?;
+    let owners = owner_map(input.dir, network, users)?;
+    let [first, second] = input.observed else {
+        return Err(Error::Construction(
+            "observations from exactly two nodes are required".to_owned(),
+        ));
+    };
+    let observed = first.utxos()?;
+    if observed != second.utxos()? || first.best_hash != second.best_hash {
+        return Err(Error::Construction(
+            "observers disagree on the funding UTXOs or tip".to_owned(),
+        ));
+    }
+    let anchor = ChainAnchor {
+        block_hash: <[u8; 32]>::from_hex(&first.best_hash)
+            .map_err(|_| Error::Construction("anchor hash".to_owned()))?,
+        height: first.height,
+        assumption: AnchorAssumption::ObservedConfirmed,
+    };
+    let mut leaves = Vec::new();
+    let mut boarding = Vec::new();
+    let mut keys = Vec::new();
+    for user in 0..users {
+        let key = Participant::load(&key_file(input.dir, SignerId::User(user)), network)?;
+        let owner = key.plain()?.serialize();
+        let (outpoint, record) = input.funding.find("boarding", user)?;
+        leaves.push(Leaf {
+            owner,
+            amount_sat: record.amount_sat,
+        });
+        boarding.push(Funding {
+            outpoint,
+            amount_sat: record.amount_sat,
+            script_pubkey: script_hex(&record.script_pubkey)?,
+            kind: FundingKind::Boarding { owner },
+        });
+        keys.push(key);
+    }
+    let (liquidity_outpoint, liquidity_record) = input.funding.find("liquidity", 0)?;
+    let statement = build_round(
+        &params,
+        asp,
+        &RoundSpec {
+            round: 1,
+            sequence: 1,
+            previous: [0; 32],
+            participants: leaves,
+            boarding: boarding.clone(),
+            liquidity: Funding {
+                outpoint: liquidity_outpoint,
+                amount_sat: liquidity_record.amount_sat,
+                script_pubkey: script_hex(&liquidity_record.script_pubkey)?,
+                kind: FundingKind::Liquidity,
+            },
+            old_vtxos: Vec::new(),
+            coop_exits: Vec::new(),
+            anchor,
+        },
+    )?;
+    let mut intents = BTreeMap::new();
+    intents.insert(
+        SignerId::Asp,
+        Intent {
+            observed: observed.clone(),
+            ..Intent::default()
+        },
+    );
+    for (user, funding) in boarding.iter().enumerate() {
+        intents.insert(
+            SignerId::User(to_u16(user, "user")?),
+            Intent {
+                receive: vec![funding.amount_sat],
+                boarding: vec![(funding.outpoint, funding.amount_sat)],
+                observed: observed.clone(),
+                ..Intent::default()
+            },
+        );
+    }
+    let all: Vec<u16> = (0..users).collect();
+    let mut session = connect(input, &all)?;
+    let signed = sign_round(&statement, &mut session.cosigners, &intents, &owners, 0)?;
+    drop(session);
+    let tag = Some(statement.digest()?.to_lower_hex_string());
+    let mut graph = Graph::new();
+    let funding_tx: Transaction = bitcoin::consensus::encode::deserialize_hex(&input.funding.hex)
+        .map_err(|_| Error::Construction("funding hex".to_owned()))?;
+    graph.learn(&funding_tx);
+    graph.add(
+        "commitment",
+        "commitment",
+        &signed.commitment,
+        &["asp", "all-users"],
+        tag.clone(),
+    )?;
+    let mut levels: BTreeMap<usize, Vec<String>> = BTreeMap::new();
+    for (index, tx) in signed.tree.iter().enumerate() {
+        let mut depth = 0;
+        let mut parent = statement.tree[index].parent;
+        while let Some(next) = parent {
+            depth += 1;
+            parent = statement.tree[usize::from(next)].parent;
+        }
+        let id = format!("tree-{index}");
+        graph.add(&id, "tree", tx, &["nested:asp+cosigners"], tag.clone())?;
+        levels.entry(depth).or_default().push(id);
+    }
+    let vtxos = statement.vtxo_outpoints()?;
+    let mut exits = Vec::new();
+    for (user, key) in keys.iter().enumerate() {
+        let script = statement.vtxo_script(user)?;
+        let tx = exit_tx(
+            &script,
+            vtxos[user],
+            statement.participants[user].amount_sat,
+            key_path_script(key.xonly()?),
+            params.fee_rate_sat_per_kvb,
+            key,
+        )?;
+        let id = format!("exit-{user}");
+        graph.add(
+            &id,
+            "unilateral-exit",
+            &tx,
+            &[&format!("user-{user}")],
+            None,
+        )?;
+        exits.push(id);
+    }
+    std::fs::write(out.join("statement-scale.bin"), statement.encode()?)?;
+    std::fs::write(
+        out.join("nova-witness-scale.json"),
+        sonic_rs::to_string(&nova_witness(&statement)?)?,
+    )?;
+    let mut plays = vec![
+        submit(
+            "commitment",
+            "accept",
+            "",
+            "round commitment with every boarding input",
+        ),
+        mine(&["commitment"], "confirm the round"),
+    ];
+    for ids in levels.values() {
+        for id in ids {
+            plays.push(Play::Submit {
+                id: id.clone(),
+                expect: "accept",
+                stage: "",
+                note: "mass exit: tree level",
+            });
+        }
+        plays.push(Play::Mine {
+            include: ids.clone(),
+            note: "confirm one tree level",
+        });
+    }
+    let last_level = levels.values().last().cloned().unwrap_or_default();
+    if let Some(leaf) = last_level.first() {
+        plays.push(Play::MineUntilAge {
+            id: leaf.clone(),
+            vout: 0,
+            age: u32::from(params.exit_delay),
+            note: "exit delay",
+        });
+    }
+    for id in &exits {
+        plays.push(Play::Submit {
+            id: id.clone(),
+            expect: "accept",
+            stage: "",
+            note: "mass exit: user leaves alone",
+        });
+    }
+    plays.push(Play::Mine {
+        include: exits.clone(),
+        note: "confirm every exit",
+    });
+    for id in &exits {
+        plays.push(Play::AssertUtxo {
+            id: id.clone(),
+            vout: 0,
+            unspent: true,
+            note: "user holds its coins",
+        });
+    }
+    let mut traffic = signed.traffic.clone();
+    traffic.seconds = signed.traffic.seconds;
+    Ok(ScenarioOutput {
+        schema: "ark-nm2-scale-v1",
+        network: network.name(),
+        params: ParamsRecord {
+            exit_delay: params.exit_delay,
+            boarding_delay: params.boarding_delay,
+            batch_expiry: params.batch_expiry,
+            fee_rate_sat_per_kvb: params.fee_rate_sat_per_kvb,
+            fee_bound_sat: params.fee_bound_sat,
+            connector_sat: params.connector_sat,
+        },
+        txs: graph.txs,
+        plays,
+        statements: vec![record_statement("scale", &statement, &signed.all())?],
+        signing: vec![SigningRecord {
+            round: format!("scale-{users}"),
+            shape: shape.name(),
+            traffic,
+            remote_users: Vec::new(),
+            remote_pids: Vec::new(),
+        }],
+        adversarial: Vec::new(),
+    })
 }

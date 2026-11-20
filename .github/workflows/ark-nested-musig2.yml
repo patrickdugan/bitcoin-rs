@@ -142,6 +142,17 @@ jobs:
             --bitcoind "$(bash scripts/install-bitcoind.sh --print-path)" \
             --ark target/quickstart/ark-nm2 \
             --output "$RUNNER_TEMP/ark-regtest"
+      - name: Mass unilateral exit at 16 and 64 VTXOs on both nodes
+        run: |
+          for n in 16 64; do
+            python3 scripts/run-ark-nested-musig2-regtest.py \
+              --bitcoin-rs target/quickstart/bitcoin-rs \
+              --bitcoind "$(bash scripts/install-bitcoind.sh --print-path)" \
+              --ark target/quickstart/ark-nm2 \
+              --scale "$n" \
+              --output "$RUNNER_TEMP/ark-scale-$n"
+            python3 scripts/run-ark-summary.py --regtest "$RUNNER_TEMP/ark-scale-$n" --bench "$RUNNER_TEMP/none"
+          done
       - name: Native benchmark at 4, 16, 64 and 256 VTXOs
         run: |
           mkdir -p "$RUNNER_TEMP/ark-bench"
@@ -157,6 +168,8 @@ jobs:
           path: |
             ${{ runner.temp }}/ark-build/
             ${{ runner.temp }}/ark-regtest/
+            ${{ runner.temp }}/ark-scale-16/
+            ${{ runner.temp }}/ark-scale-64/
             ${{ runner.temp }}/ark-bench/
           if-no-files-found: warn
           retention-days: 14

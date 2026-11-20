@@ -9,7 +9,7 @@ use bitcoin_rs_ark_nested_musig2::policy::{Shape, SignerId};
 use bitcoin_rs_ark_nested_musig2::round::{Params, exit_tx, key_spend, output};
 use bitcoin_rs_ark_nested_musig2::scenario::{
     BOARDING_BASE_SAT, FundingRecord, LIQUIDITY_SAT, ObservedRecord, ScenarioInput, bench,
-    faucet_file, fund, key_file, run_scenario,
+    faucet_file, fund, key_file, run_scale, run_scenario,
 };
 use bitcoin_rs_ark_nested_musig2::scripts::{VtxoScript, key_path_address, key_path_script};
 use bitcoin_rs_ark_nested_musig2::statement::{
@@ -82,6 +82,10 @@ enum Command {
         remote_users: Vec<u16>,
         #[arg(long)]
         out: PathBuf,
+        #[arg(long)]
+        scale: Option<u16>,
+        #[arg(long, default_value = "nested")]
+        shape: String,
     },
     Signer {
         #[arg(long)]
@@ -255,6 +259,8 @@ fn run() -> Result<String, Error> {
             observed,
             remote_users,
             out,
+            scale,
+            shape,
         } => {
             let funding: FundingRecord = sonic_rs::from_str(&std::fs::read_to_string(funding)?)?;
             let observed: Vec<ObservedRecord> = observed
@@ -263,17 +269,29 @@ fn run() -> Result<String, Error> {
                 .collect::<Result<_, Error>>()?;
             let binary = std::env::current_exe()?;
             std::fs::create_dir_all(&out)?;
-            let output = run_scenario(
-                &ScenarioInput {
-                    dir: &dir,
-                    network: network.key(),
-                    funding: &funding,
-                    observed: &observed,
-                    remote_users: &remote_users,
-                    binary: &binary,
-                },
-                &out,
-            )?;
+            let input = ScenarioInput {
+                dir: &dir,
+                network: network.key(),
+                funding: &funding,
+                observed: &observed,
+                remote_users: &remote_users,
+                binary: &binary,
+            };
+            let output = match scale {
+                None => run_scenario(&input, &out)?,
+                Some(users) => {
+                    let shape = match shape.as_str() {
+                        "nested" => Shape::Nested,
+                        "flat" => Shape::Flat,
+                        _ => {
+                            return Err(Error::Construction(
+                                "shape must be nested or flat".to_owned(),
+                            ));
+                        }
+                    };
+                    run_scale(&input, users, shape, &out)?
+                }
+            };
             let text = json(&output)?;
             std::fs::write(out.join("scenario.json"), &text)?;
             Ok(format!(
