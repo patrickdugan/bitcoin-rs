@@ -38,6 +38,10 @@ The `conformance` feature exposes deterministic nonce generation and nonce
 import for external vectors. Ordinary builds omit those entry points. The
 command-line signer always obtains entropy from the operating system.
 
+Staging CI selects Rust 1.99.1 explicitly through `RUSTUP_TOOLCHAIN` and records
+the compiler version in the bundle. The repository's general PR checks use
+the current stable compiler.
+
 The library sorts each aggregation's compressed keys according to BIP327 and
 retains duplicate occurrences. It bounds path depth, participant count, and
 message length. Root tweaks use BIP327's plain and X-only tweak rules. The
@@ -88,7 +92,8 @@ spend into block 102. Core must accept that block, after which both nodes must
 show the funding output as spent and the new output as confirmed.
 
 `.github/workflows/nested-musig2.yml` runs this lane and retains its public
-evidence. The output directory contains:
+evidence in the runner's temporary directory, outside Cargo's build cache.
+The output directory contains:
 
 | File | Contents |
 | --- | --- |

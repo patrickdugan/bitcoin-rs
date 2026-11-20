@@ -27,6 +27,7 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_BUILD_JOBS: 2
   RUST_BACKTRACE: 1
+  RUSTUP_TOOLCHAIN: 1.99.1
 
 jobs:
   conformance:
@@ -39,7 +40,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
-          toolchain: 1.99.0
+          toolchain: 1.99.1
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
         with:
@@ -50,17 +51,17 @@ jobs:
           cargo clippy --locked -p bitcoin-rs-nested-musig2 --all-targets --features conformance -- -D warnings
       - name: Check reference vectors and nonce ownership
         run: |
-          mkdir -p target/nested-musig2-conformance
+          mkdir -p "$RUNNER_TEMP/nested-musig2-conformance"
           set -o pipefail
-          cargo test --locked -p bitcoin-rs-nested-musig2 --features conformance 2>&1 | tee target/nested-musig2-conformance/tests.log
-          python3 -m unittest discover -s scripts/tests -p test_nested_musig2_staging.py 2>&1 | tee target/nested-musig2-conformance/rpc-tests.log
-          git rev-parse HEAD > target/nested-musig2-conformance/source-sha.txt
-          rustc --version > target/nested-musig2-conformance/rustc.txt
+          cargo test --locked -p bitcoin-rs-nested-musig2 --features conformance 2>&1 | tee "$RUNNER_TEMP/nested-musig2-conformance/tests.log"
+          python3 -m unittest discover -s scripts/tests -p test_nested_musig2_staging.py 2>&1 | tee "$RUNNER_TEMP/nested-musig2-conformance/rpc-tests.log"
+          git rev-parse HEAD > "$RUNNER_TEMP/nested-musig2-conformance/source-sha.txt"
+          rustc --version > "$RUNNER_TEMP/nested-musig2-conformance/rustc.txt"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: nested-musig2-conformance-${{ github.run_id }}-${{ github.run_attempt }}
-          path: target/nested-musig2-conformance/
+          path: ${{ runner.temp }}/nested-musig2-conformance/
           if-no-files-found: warn
           retention-days: 14
 
@@ -75,18 +76,18 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
-          toolchain: 1.99.0
+          toolchain: 1.99.1
       - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
         with:
           key: nested-musig2-regtest
       - name: Build the node and production nonce API
         run: |
-          mkdir -p target/nested-musig2-build
+          mkdir -p "$RUNNER_TEMP/nested-musig2-build"
           set -o pipefail
-          cargo build --locked --profile quickstart -p bitcoin-rs --no-default-features --features fjall 2>&1 | tee target/nested-musig2-build/node.log
-          cargo build --locked --profile quickstart -p bitcoin-rs-nested-musig2 2>&1 | tee target/nested-musig2-build/signer.log
-          git rev-parse HEAD > target/nested-musig2-build/source-sha.txt
-          sha256sum target/quickstart/bitcoin-rs target/quickstart/nested-musig2 > target/nested-musig2-build/binaries.sha256
+          cargo build --locked --profile quickstart -p bitcoin-rs --no-default-features --features fjall 2>&1 | tee "$RUNNER_TEMP/nested-musig2-build/node.log"
+          cargo build --locked --profile quickstart -p bitcoin-rs-nested-musig2 2>&1 | tee "$RUNNER_TEMP/nested-musig2-build/signer.log"
+          git rev-parse HEAD > "$RUNNER_TEMP/nested-musig2-build/source-sha.txt"
+          sha256sum target/quickstart/bitcoin-rs target/quickstart/nested-musig2 > "$RUNNER_TEMP/nested-musig2-build/binaries.sha256"
       - name: Verify dependency ownership and locktime behavior
         run: |
           cargo test --locked -p bitcoin-rs --no-default-features --features fjall --test suite g17_dependency_direction::workspace_dependency_direction_is_one_way -- --exact
@@ -99,24 +100,24 @@ jobs:
             --bitcoin-rs target/quickstart/bitcoin-rs \
             --bitcoind "$(bash scripts/install-bitcoind.sh --print-path)" \
             --signer target/quickstart/nested-musig2 \
-            --output target/nested-musig2-regtest
+            --output "$RUNNER_TEMP/nested-musig2-regtest"
       - name: Package the verified Linux staging tools
         run: |
-          mkdir -p target/nested-musig2-stage/bin target/nested-musig2-stage/scripts
-          cp target/quickstart/bitcoin-rs target/quickstart/nested-musig2 target/nested-musig2-stage/bin/
-          cp scripts/run-nested-musig2-testnet.py scripts/nested_musig2_staging.py target/nested-musig2-stage/scripts/
-          cp tools/nested-musig2/README.md target/nested-musig2-stage/README.md
-          cp target/nested-musig2-regtest/receipt.json target/nested-musig2-stage/regtest-receipt.json
-          git rev-parse HEAD > target/nested-musig2-stage/source-sha.txt
-          rustc --version --verbose > target/nested-musig2-stage/build-rustc.txt
-          ldd --version > target/nested-musig2-stage/build-libc.txt
-          cd target/nested-musig2-stage
+          mkdir -p "$RUNNER_TEMP/nested-musig2-stage/bin" "$RUNNER_TEMP/nested-musig2-stage/scripts"
+          cp target/quickstart/bitcoin-rs target/quickstart/nested-musig2 "$RUNNER_TEMP/nested-musig2-stage/bin/"
+          cp scripts/run-nested-musig2-testnet.py scripts/nested_musig2_staging.py "$RUNNER_TEMP/nested-musig2-stage/scripts/"
+          cp tools/nested-musig2/README.md "$RUNNER_TEMP/nested-musig2-stage/README.md"
+          cp "$RUNNER_TEMP/nested-musig2-regtest/receipt.json" "$RUNNER_TEMP/nested-musig2-stage/regtest-receipt.json"
+          git rev-parse HEAD > "$RUNNER_TEMP/nested-musig2-stage/source-sha.txt"
+          rustc --version --verbose > "$RUNNER_TEMP/nested-musig2-stage/build-rustc.txt"
+          ldd --version > "$RUNNER_TEMP/nested-musig2-stage/build-libc.txt"
+          cd "$RUNNER_TEMP/nested-musig2-stage"
           sha256sum bin/bitcoin-rs bin/nested-musig2 scripts/*.py source-sha.txt regtest-receipt.json README.md build-*.txt > SHA256SUMS
           tar -czf ../nested-musig2-linux-x86_64.tar.gz .
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: nested-musig2-linux-x86_64-${{ github.run_id }}-${{ github.run_attempt }}
-          path: target/nested-musig2-linux-x86_64.tar.gz
+          path: ${{ runner.temp }}/nested-musig2-linux-x86_64.tar.gz
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -124,7 +125,7 @@ jobs:
         with:
           name: nested-musig2-regtest-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            target/nested-musig2-build/
-            target/nested-musig2-regtest/
+            ${{ runner.temp }}/nested-musig2-build/
+            ${{ runner.temp }}/nested-musig2-regtest/
           if-no-files-found: warn
           retention-days: 14
