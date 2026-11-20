@@ -1,0 +1,912 @@
+{
+ "schema": "ark-nested-musig2-adversarial-v1",
+ "rust_level": [
+  {
+   "name": "partial-signature-substitution",
+   "category": "signing",
+   "expected_stage": "partial-verify",
+   "observed_stage": "partial-verify",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers",
+    "process-signers"
+   ],
+   "detail": "coordinator receives a forged partial from the first leaf"
+  },
+  {
+   "name": "aggregate-nonce-substitution",
+   "category": "signing",
+   "expected_stage": "partial-verify",
+   "observed_stage": "partial-verify",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers",
+    "process-signers"
+   ],
+   "detail": "first leaf is sent a root aggregate nonce that differs from everyone else's"
+  },
+  {
+   "name": "nonce-replay-after-partial-disclosure",
+   "category": "nonce",
+   "expected_stage": "client-nonce-unavailable",
+   "observed_stage": "client-nonce-unavailable",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers",
+    "process-signers"
+   ],
+   "detail": "coordinator asks the same session for a second partial signature"
+  },
+  {
+   "name": "session-identifier-reuse",
+   "category": "nonce",
+   "expected_stage": "client-session-reuse",
+   "observed_stage": "client-session-reuse",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers"
+   ],
+   "detail": "a consumed session identifier requests a fresh nonce"
+  },
+  {
+   "name": "wrong-aggregate-key",
+   "category": "signing",
+   "expected_stage": "client-aggregate-key",
+   "observed_stage": "client-aggregate-key",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers"
+   ],
+   "detail": "nonce requested for an aggregate key other than the policy's"
+  },
+  {
+   "name": "crash-after-nonce-generation",
+   "category": "nonce",
+   "expected_stage": "client-nonce-unavailable",
+   "observed_stage": "client-nonce-unavailable",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "process-signers"
+   ],
+   "detail": "signer pid 277547 killed after releasing a nonce; restarted as pid 277548"
+  },
+  {
+   "name": "session-restart-with-fresh-nonces",
+   "category": "nonce",
+   "expected_stage": "accepted",
+   "observed_stage": "accepted",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "process-signers"
+   ],
+   "detail": "a new attempt with fresh nonces from the restarted process completes and verifies"
+  },
+  {
+   "name": "boarding-funding-script-mismatch",
+   "category": "boarding-regression",
+   "expected_stage": "funding-observed-script",
+   "observed_stage": "funding-observed-script",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "observed-utxo-set"
+   ],
+   "detail": "the funding output on chain pays the user's key alone, as in the 2026 Bark board exploit class"
+  },
+  {
+   "name": "boarding-funding-value-short",
+   "category": "boarding-regression",
+   "expected_stage": "funding-observed-value",
+   "observed_stage": "funding-observed-value",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "observed-utxo-set"
+   ],
+   "detail": "the funding output on chain holds 1,000 sat less than claimed"
+  },
+  {
+   "name": "boarding-funding-unconfirmed",
+   "category": "boarding-regression",
+   "expected_stage": "funding-observed-unconfirmed",
+   "observed_stage": "funding-observed-unconfirmed",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "observed-utxo-set"
+   ],
+   "detail": "funding output seen only in the mempool"
+  },
+  {
+   "name": "server-controlled-batch-output",
+   "category": "boarding-regression",
+   "expected_stage": "batch-output-script",
+   "observed_stage": "batch-output-script",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "native-statement-checker"
+   ],
+   "detail": "batch output pays the operator's key; a client that signs anyway loses its VTXO"
+  },
+  {
+   "name": "server-controlled-batch-theft-path",
+   "category": "boarding-regression",
+   "expected_stage": "accepted",
+   "observed_stage": "accepted",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "bitcoin-rs-script"
+   ],
+   "detail": "with the unchecked statement the operator alone can spend the batch output; a non-validating client would have authorized this"
+  },
+  {
+   "name": "batch-output-underfunded",
+   "category": "boarding-regression",
+   "expected_stage": "value-conservation",
+   "observed_stage": "value-conservation",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "native-statement-checker"
+   ],
+   "detail": "batch output 1,000 sat below the tree it must fund"
+  },
+  {
+   "name": "asp-equivocation",
+   "category": "equivocation",
+   "expected_stage": "client-vtxo-amount",
+   "observed_stage": "client-vtxo-amount",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers"
+   ],
+   "detail": "operator shows a second tree moving 5,000 sat from B to A; digests differ (707a1f8729f01c38ed54e34723e667fc1635e4904ee971502c5c8591c3bec9a8 vs 05416f299e9c363678400cb2bc659b61648df426577a55497e9e1a11b017cd09); both root transactions spend the same batch outpoint: true"
+  },
+  {
+   "name": "omitted-participant",
+   "category": "batch-composition",
+   "expected_stage": "client-vtxo-missing",
+   "observed_stage": "client-vtxo-missing",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers"
+   ],
+   "detail": "D's boarding input is spent but D has no VTXO leaf"
+  },
+  {
+   "name": "reordered-participants",
+   "category": "batch-composition",
+   "expected_stage": "nested-key-changes",
+   "observed_stage": "nested-key-changes",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture"
+   ],
+   "detail": "swapping B and C across subgroups changes the nested aggregate key and statement; the flat BIP327 key is order invariant"
+  },
+  {
+   "name": "payout-altered-before-authorization",
+   "category": "payout",
+   "expected_stage": "client-coop-exit",
+   "observed_stage": "client-coop-exit",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "in-process-signers"
+   ],
+   "detail": "operator redirects B's cooperative exit before B signs its forfeit"
+  },
+  {
+   "name": "payout-altered-after-authorization",
+   "category": "payout",
+   "expected_stage": "script-verification",
+   "observed_stage": "script-verification",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "bitcoin-rs-script"
+   ],
+   "detail": "the signed commitment's sighash covers every output; the node plays repeat this on bitcoin-rs and Core"
+  },
+  {
+   "name": "duplicate-vtxo-forfeit",
+   "category": "double-spend",
+   "expected_stage": "single-use-spends",
+   "observed_stage": "single-use-spends",
+   "as_expected": true,
+   "executed_against": [
+    "own-ark-fixture",
+    "native-statement-checker"
+   ],
+   "detail": "the same old VTXO is forfeited against two connectors"
+  }
+ ],
+ "l1_submissions": [
+  {
+   "id": "e-boarding-recovery",
+   "txid": "ba042797a70a49bad894e2b9d5da76ea4e3c891694a4a34a77db3718adb1ae5c",
+   "expect": "reject",
+   "expected_stage": "relative-locktime",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final (non-BIP68-final)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "zero-fee-v2",
+   "txid": "b01ab6923a0a161db13b69d5f4450005c74f1d9f4404e4cd1c6626e1e119fd6f",
+   "expect": "reject",
+   "expected_stage": "min-relay-fee",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "min-relay-fee",
+     "reject_reason": "min relay fee not met",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "min-relay-fee",
+     "reject_reason": "min relay fee not met (min relay fee not met, 0 < 12)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r0-commitment",
+   "txid": "e1549071b0a3e88c0b59a1115dab7a897e7d035eedf4ab8fc5da5cc1ee522e64",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 584,
+     "fee_sat": 1168
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 584,
+     "fee_sat": 1168
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "asp-replace-low",
+   "txid": "e7a94851a34c0ce63c92a0645d45b0caefc4a4593852d3c92ca6aacbab1c193d",
+   "expect": "reject",
+   "expected_stage": "replacement-fee",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "replacement-fee",
+     "reject_reason": "insufficient fee",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "replacement-fee",
+     "reject_reason": "insufficient fee (insufficient fee, rejecting replacement e7a94851a34c0ce63c92a0645d45b0caefc4a4593852d3c92ca6aacbab1c193d, less fees than conflicting txs; 0.000003 < 0.00001168)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "asp-replace-high",
+   "txid": "223231ecf6700d60e47edff5bcc6550de22b6f2a959daf5e8a9a0ef8f4bd46a9",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 111,
+     "fee_sat": 11168
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 111,
+     "fee_sat": 11168
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r0-commitment",
+   "txid": "e1549071b0a3e88c0b59a1115dab7a897e7d035eedf4ab8fc5da5cc1ee522e64",
+   "expect": "reject",
+   "expected_stage": "missing-inputs",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r1-commitment",
+   "txid": "8dfe8ff6bf015a4d0fa4641485533c6b97435605c7df59117070c33d79113f26",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 584,
+     "fee_sat": 1168
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 584,
+     "fee_sat": 1168
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-forfeit-0",
+   "txid": "8e3db19b298c790093a944e524d8e6c20861dfb2a56ae32410340ef42100d38e",
+   "expect": "reject",
+   "expected_stage": "missing-inputs",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-commitment-payout-altered",
+   "txid": "2eab7d5eea0e1d729fdbfc79daf5ddc2be5835e11e89f2a3393d85d322bdfe24",
+   "expect": "reject",
+   "expected_stage": "script-verification",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "script-verification",
+     "reject_reason": "script-verify-flag-failed",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "script-verification",
+     "reject_reason": "mempool-script-verify-flag-failed (Invalid Schnorr signature) (mempool-script-verify-flag-failed (Invalid Schnorr signature), input 0 of 2eab7d5eea0e1d729fdbfc79daf5ddc2be5835e11e89f2a3393d85d322bdfe24 (wtxid 2ce6826848e2a19515c0a114863c375aa8e8b8798a3e56918fa22cd2df85e4f1), spending 135fce5ddf0b4d78cf0678b5fa6bbadc917022f5bdce1ab35404aa3a7240408e:7)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-commitment",
+   "txid": "219b9857952be804df0ac1153eaf9254fc75eeddedc17dab44133ef5af673deb",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 326,
+     "fee_sat": 652
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 326,
+     "fee_sat": 652
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r1-tree-0",
+   "txid": "6ebb3da71925b543d5bacd5dab652446b64b0172d06796df6adadfc9f57a5803",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r1-tree-2",
+   "txid": "a0e1df08e254c7baf6c59895ba589e3a86cc7cbe3d96f1880268eb7545469bb7",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "exit-d",
+   "txid": "4e47c2284d43cfeac4a4c4896f2de50e73bf1b99818b9091e664ee221468d0c4",
+   "expect": "reject",
+   "expected_stage": "relative-locktime",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final (non-BIP68-final)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-forfeit-2",
+   "txid": "d4cdc7c07908491c8ff0864e303f3a9e1d094b93ff0464a773b718d183a4f3c6",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "exit-d",
+   "txid": "4e47c2284d43cfeac4a4c4896f2de50e73bf1b99818b9091e664ee221468d0c4",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 137,
+     "fee_sat": 274
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 137,
+     "fee_sat": 274
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r1-tree-1",
+   "txid": "f98a47b3e6e9c882b2b0e520f2bd61d9fef0a9dd56308a6624cf887ad1f5f01f",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-forfeit-0",
+   "txid": "8e3db19b298c790093a944e524d8e6c20861dfb2a56ae32410340ef42100d38e",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-forfeit-1",
+   "txid": "7d26e1b93607080dee267745f849e8b3d9a2ded60f6dfbfafd56c8ffaccb2d37",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 219,
+     "fee_sat": 438
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-forfeit-1",
+   "txid": "7d26e1b93607080dee267745f849e8b3d9a2ded60f6dfbfafd56c8ffaccb2d37",
+   "expect": "reject",
+   "expected_stage": "already-spent",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "already-known",
+     "reject_reason": "txn-already-known (txn-already-known)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "exit-b",
+   "txid": "c6ef809c268e477f4256b4f3667eec9303c2eac4177c4cf271c08a629a9198b5",
+   "expect": "reject",
+   "expected_stage": "missing-inputs",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "asp-sweep-r2",
+   "txid": "04d1f9d409fada1e62ecceff5969e6921f27eae6318dcaa8e0b9c6750214dd2c",
+   "expect": "reject",
+   "expected_stage": "relative-locktime",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "relative-locktime",
+     "reject_reason": "non-BIP68-final (non-BIP68-final)",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-tree-0",
+   "txid": "c2bd2a1418f8e5d157025528b805536d267c2d302deaafc230693233318a80b2",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 154,
+     "fee_sat": 308
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "asp-sweep-r2",
+   "txid": "04d1f9d409fada1e62ecceff5969e6921f27eae6318dcaa8e0b9c6750214dd2c",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 130,
+     "fee_sat": 1300
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 130,
+     "fee_sat": 1300
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "r2-tree-0",
+   "txid": "c2bd2a1418f8e5d157025528b805536d267c2d302deaafc230693233318a80b2",
+   "expect": "reject",
+   "expected_stage": "missing-inputs",
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    },
+    "core": {
+     "allowed": false,
+     "stage": "missing-inputs",
+     "reject_reason": "missing-inputs",
+     "vsize": null,
+     "fee_sat": null
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  },
+  {
+   "id": "e-boarding-recovery",
+   "txid": "ba042797a70a49bad894e2b9d5da76ea4e3c891694a4a34a77db3718adb1ae5c",
+   "expect": "accept",
+   "expected_stage": null,
+   "outcome_as_expected": true,
+   "nodes": {
+    "bitcoin-rs": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 138,
+     "fee_sat": 276
+    },
+    "core": {
+     "allowed": true,
+     "stage": null,
+     "reject_reason": null,
+     "vsize": 138,
+     "fee_sat": 276
+    }
+   },
+   "executed_against": [
+    "bitcoin-rs node (native engine)",
+    "Bitcoin Core 31.1"
+   ]
+  }
+ ]
+}

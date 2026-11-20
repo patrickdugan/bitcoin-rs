@@ -1,0 +1,1893 @@
+{
+ "ci_runs": [
+  "regtest-lifecycle-and-interop=44794108747:success",
+  "regtest-scale-16-64=44796328008:success",
+  "first-run-below-csv-activation=44789491582:failure"
+ ],
+ "environment": "WSL2 Ubuntu 24.04, 20 threads, Rust 1.99.1, bitcoin-rs quickstart fjall at fa87365 (clean), Bitcoin Core 31.1 pinned tarball; ark-nova 81140f9 RAYON_NUM_THREADS=8",
+ "files": {
+  "adversarial_traces": "adversarial-traces.json",
+  "sources": "sources.json",
+  "transactions": "transactions.json"
+ },
+ "interop": {
+  "all_equal": true,
+  "ark_core_rev": "c786942969dd16f9e94fc165a99a329a39ed183d",
+  "cases": [
+   {
+    "ark_core_script_pubkey": "5120df276373d95787ca03caa6b7f1d3be22d9470cde4b8dc693627e93dc588f4534",
+    "ark_nm2_script_pubkey": "5120df276373d95787ca03caa6b7f1d3be22d9470cde4b8dc693627e93dc588f4534",
+    "exit_blocks": 12,
+    "leaves_equal": true,
+    "owner_xonly": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+    "script_pubkey_equal": true,
+    "server_xonly": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+   },
+   {
+    "ark_core_script_pubkey": "51207cfded956ff301e8d4621e3390e1bbe293860ce3bc8f3537769ffcf8e6c219bc",
+    "ark_nm2_script_pubkey": "51207cfded956ff301e8d4621e3390e1bbe293860ce3bc8f3537769ffcf8e6c219bc",
+    "exit_blocks": 1,
+    "leaves_equal": true,
+    "owner_xonly": "37a194d76f03872356b69ec18524d12e7483992356ec36e74027dae8a9bc3138",
+    "script_pubkey_equal": true,
+    "server_xonly": "2b0275914ef93cc6dc7618dba07e9348f97cb01f1015987f286a9363274b202c"
+   },
+   {
+    "ark_core_script_pubkey": "5120476bb43b6181264cb5561f9eb9ed5d49fb1cc701025a0504c3f1eed33339ec82",
+    "ark_nm2_script_pubkey": "5120476bb43b6181264cb5561f9eb9ed5d49fb1cc701025a0504c3f1eed33339ec82",
+    "exit_blocks": 16,
+    "leaves_equal": true,
+    "owner_xonly": "1557f949eb074ee1de813d3598b394ea654e9066ba7dd5ffe290848c31a8c9c8",
+    "script_pubkey_equal": true,
+    "server_xonly": "7f409b1b3211c37499c9619f42ae0d2abdee652ebdc1af0502d6b539a6704306"
+   },
+   {
+    "ark_core_script_pubkey": "512032ec39bbaeb04dbdef9e950a7bb4e6b44d4bee13f5fd366facc32375fc5b6691",
+    "ark_nm2_script_pubkey": "512032ec39bbaeb04dbdef9e950a7bb4e6b44d4bee13f5fd366facc32375fc5b6691",
+    "exit_blocks": 17,
+    "leaves_equal": true,
+    "owner_xonly": "713a34a3c313be426d15b5c62ca9c115a1fa6a3a1b51a8f4c6e374b001a45310",
+    "script_pubkey_equal": true,
+    "server_xonly": "0504ed99da79245b70c9086506205f3e89389e921f5667050875baa1447262ca"
+   },
+   {
+    "ark_core_script_pubkey": "5120e038c4142782bea2319105ec29bc4e288ee5978f34ac1d8cd0f84e4f82d53166",
+    "ark_nm2_script_pubkey": "5120e038c4142782bea2319105ec29bc4e288ee5978f34ac1d8cd0f84e4f82d53166",
+    "exit_blocks": 144,
+    "leaves_equal": true,
+    "owner_xonly": "f2047532a0e8f1ca30e2391636330b1f05768679a7d9e78191d66ef69196623e",
+    "script_pubkey_equal": true,
+    "server_xonly": "adab59f8884abe07748c53f9714db1f6af303578d14cc7324b97dbc2f08ca3f9"
+   },
+   {
+    "ark_core_script_pubkey": "51207e46ae639fabc2be8f83b369aedfc2df9be7f5bc1c8a5db9390a48b5a1ae7e5f",
+    "ark_nm2_script_pubkey": "51207e46ae639fabc2be8f83b369aedfc2df9be7f5bc1c8a5db9390a48b5a1ae7e5f",
+    "exit_blocks": 1008,
+    "leaves_equal": true,
+    "owner_xonly": "d409781ffcdc9620ff047773f419eea9abcdef2f2f58bdde5468a10f65a095c4",
+    "script_pubkey_equal": true,
+    "server_xonly": "3ff1c70a7a5966eee68c7a94e4315d7db58e397235b9429ae89e8700ceea1831"
+   },
+   {
+    "ark_core_script_pubkey": "512091f234334583113329cb4680ed21bdf726f8292b3a67490b1dd744add1ea807e",
+    "ark_nm2_script_pubkey": "512091f234334583113329cb4680ed21bdf726f8292b3a67490b1dd744add1ea807e",
+    "exit_blocks": 65535,
+    "leaves_equal": true,
+    "owner_xonly": "47e8d924257052f50384dc9975389e7323ff0eaa0216353a588b92161f7d17ee",
+    "script_pubkey_equal": true,
+    "server_xonly": "b621441f78a71897858d07e6a4bfd7da22132b664900733a8a6d7ca0577a9b11"
+   }
+  ],
+  "schema": "ark-interop-comparison-v1"
+ },
+ "native": {
+  "adversarial_summary": {
+   "as_expected": 19,
+   "total": 19
+  },
+  "bench": [
+   {
+    "build_seconds": 0.004391187,
+    "commitment_fee_sat": 1168,
+    "commitment_vsize": 584,
+    "cooperative_fee_per_vtxo_sat": 292.0,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 146.0,
+    "mass_exit_fee_sat": 2020,
+    "mass_exit_txs": 7,
+    "mass_exit_vbytes": 1010,
+    "mass_exit_vbytes_per_vtxo": 252.5,
+    "native_inputs_verified": 12,
+    "native_verify_seconds": 0.002772411,
+    "nova_items": 20,
+    "nova_steps": 28,
+    "peak_rss_kib": 5728,
+    "shape": "flat",
+    "signing_seconds": 0.04278607,
+    "statement_bytes": 1671,
+    "statement_check_accepted": true,
+    "statement_digest": "5cfb58c9c6af3fce913896b60f83f361da392da869d2056cb558eeb63e148a59",
+    "traffic": {
+     "bytes": 3564,
+     "context_messages": 11,
+     "critical_path_hops": 9,
+     "max_depth": 1,
+     "max_fan_in": 5,
+     "messages": 33,
+     "nonce_messages": 11,
+     "partial_messages": 11,
+     "root_fan_in": 5,
+     "seconds": 0.029499711999999997,
+     "sessions": 3
+    },
+    "tree_fee_total_sat": 924,
+    "tree_txs": 3,
+    "tree_vsize_total": 462,
+    "unilateral_exit_fee_one_user_sat": 890,
+    "unilateral_exit_txs_one_user": 3,
+    "unilateral_exit_vbytes_one_user": 445,
+    "vtxos": 4,
+    "wall_seconds": 0.06
+   },
+   {
+    "build_seconds": 0.004867601,
+    "commitment_fee_sat": 1168,
+    "commitment_vsize": 584,
+    "cooperative_fee_per_vtxo_sat": 292.0,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 146.0,
+    "mass_exit_fee_sat": 2020,
+    "mass_exit_txs": 7,
+    "mass_exit_vbytes": 1010,
+    "mass_exit_vbytes_per_vtxo": 252.5,
+    "native_inputs_verified": 12,
+    "native_verify_seconds": 0.002407591,
+    "nova_items": 20,
+    "nova_steps": 28,
+    "peak_rss_kib": 5756,
+    "shape": "nested",
+    "signing_seconds": 0.042392575,
+    "statement_bytes": 1671,
+    "statement_check_accepted": true,
+    "statement_digest": "647e6eb03e67f8dabb7a1f0611c74e7877862c16f1a867c3eb2fc94e41f50aa9",
+    "traffic": {
+     "bytes": 4218,
+     "context_messages": 13,
+     "critical_path_hops": 12,
+     "max_depth": 2,
+     "max_fan_in": 3,
+     "messages": 39,
+     "nonce_messages": 13,
+     "partial_messages": 13,
+     "root_fan_in": 3,
+     "seconds": 0.030488255,
+     "sessions": 3
+    },
+    "tree_fee_total_sat": 924,
+    "tree_txs": 3,
+    "tree_vsize_total": 462,
+    "unilateral_exit_fee_one_user_sat": 890,
+    "unilateral_exit_txs_one_user": 3,
+    "unilateral_exit_vbytes_one_user": 445,
+    "vtxos": 4,
+    "wall_seconds": 0.05
+   },
+   {
+    "build_seconds": 0.015480952,
+    "commitment_fee_sat": 3748,
+    "commitment_vsize": 1874,
+    "cooperative_fee_per_vtxo_sat": 234.25,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 117.125,
+    "mass_exit_fee_sat": 9004,
+    "mass_exit_txs": 31,
+    "mass_exit_vbytes": 4502,
+    "mass_exit_vbytes_per_vtxo": 281.375,
+    "native_inputs_verified": 48,
+    "native_verify_seconds": 0.008968947,
+    "nova_items": 80,
+    "nova_steps": 112,
+    "peak_rss_kib": 6420,
+    "shape": "flat",
+    "signing_seconds": 0.662223755,
+    "statement_bytes": 5859,
+    "statement_check_accepted": true,
+    "statement_digest": "a015a835ed0eee7975f7fb2f1088403b242347402a26b30b2d79c4f82ee91bfa",
+    "traffic": {
+     "bytes": 35964,
+     "context_messages": 79,
+     "critical_path_hops": 45,
+     "max_depth": 1,
+     "max_fan_in": 17,
+     "messages": 237,
+     "nonce_messages": 79,
+     "partial_messages": 79,
+     "root_fan_in": 17,
+     "seconds": 0.41506441000000005,
+     "sessions": 15
+    },
+    "tree_fee_total_sat": 4620,
+    "tree_txs": 15,
+    "tree_vsize_total": 2310,
+    "unilateral_exit_fee_one_user_sat": 1506,
+    "unilateral_exit_txs_one_user": 5,
+    "unilateral_exit_vbytes_one_user": 753,
+    "vtxos": 16,
+    "wall_seconds": 0.72
+   },
+   {
+    "build_seconds": 0.017650433,
+    "commitment_fee_sat": 3748,
+    "commitment_vsize": 1874,
+    "cooperative_fee_per_vtxo_sat": 234.25,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 117.125,
+    "mass_exit_fee_sat": 9004,
+    "mass_exit_txs": 31,
+    "mass_exit_vbytes": 4502,
+    "mass_exit_vbytes_per_vtxo": 281.375,
+    "native_inputs_verified": 48,
+    "native_verify_seconds": 0.007490677,
+    "nova_items": 80,
+    "nova_steps": 112,
+    "peak_rss_kib": 6172,
+    "shape": "nested",
+    "signing_seconds": 0.458687874,
+    "statement_bytes": 5859,
+    "statement_check_accepted": true,
+    "statement_digest": "fc2c93f92b35edaf1cf5e8ca37514c828eebc8a53b1c97ba3d70d6ceaebafd32",
+    "traffic": {
+     "bytes": 45498,
+     "context_messages": 113,
+     "critical_path_hops": 78,
+     "max_depth": 4,
+     "max_fan_in": 3,
+     "messages": 339,
+     "nonce_messages": 113,
+     "partial_messages": 113,
+     "root_fan_in": 3,
+     "seconds": 0.263627178,
+     "sessions": 15
+    },
+    "tree_fee_total_sat": 4620,
+    "tree_txs": 15,
+    "tree_vsize_total": 2310,
+    "unilateral_exit_fee_one_user_sat": 1506,
+    "unilateral_exit_txs_one_user": 5,
+    "unilateral_exit_vbytes_one_user": 753,
+    "vtxos": 16,
+    "wall_seconds": 0.51
+   },
+   {
+    "build_seconds": 0.096478806,
+    "commitment_fee_sat": 14068,
+    "commitment_vsize": 7034,
+    "cooperative_fee_per_vtxo_sat": 219.8125,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 109.90625,
+    "mass_exit_fee_sat": 36940,
+    "mass_exit_txs": 127,
+    "mass_exit_vbytes": 18470,
+    "mass_exit_vbytes_per_vtxo": 288.59375,
+    "native_inputs_verified": 192,
+    "native_verify_seconds": 0.039586829,
+    "nova_items": 320,
+    "nova_steps": 448,
+    "peak_rss_kib": 10316,
+    "shape": "flat",
+    "signing_seconds": 8.863658752,
+    "statement_bytes": 22611,
+    "statement_check_accepted": true,
+    "statement_digest": "326e24316bb1d3aa9e5e1941202c7271ca13a01ea95455df207837f262e3f632",
+    "traffic": {
+     "bytes": 380700,
+     "context_messages": 447,
+     "critical_path_hops": 189,
+     "max_depth": 1,
+     "max_fan_in": 65,
+     "messages": 1341,
+     "nonce_messages": 447,
+     "partial_messages": 447,
+     "root_fan_in": 65,
+     "seconds": 4.679836022999997,
+     "sessions": 63
+    },
+    "tree_fee_total_sat": 19404,
+    "tree_txs": 63,
+    "tree_vsize_total": 9702,
+    "unilateral_exit_fee_one_user_sat": 2122,
+    "unilateral_exit_txs_one_user": 7,
+    "unilateral_exit_vbytes_one_user": 1061,
+    "vtxos": 64,
+    "wall_seconds": 9.12
+   },
+   {
+    "build_seconds": 0.102871594,
+    "commitment_fee_sat": 14068,
+    "commitment_vsize": 7034,
+    "cooperative_fee_per_vtxo_sat": 219.8125,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 109.90625,
+    "mass_exit_fee_sat": 36940,
+    "mass_exit_txs": 127,
+    "mass_exit_vbytes": 18470,
+    "mass_exit_vbytes_per_vtxo": 288.59375,
+    "native_inputs_verified": 192,
+    "native_verify_seconds": 0.033873808,
+    "nova_items": 320,
+    "nova_steps": 448,
+    "peak_rss_kib": 10212,
+    "shape": "nested",
+    "signing_seconds": 6.218821897,
+    "statement_bytes": 22611,
+    "statement_check_accepted": true,
+    "statement_digest": "35d7b133cae5cd19f32295f1e04f79602c9d5723bc38f0e24ebea71dbb5db074",
+    "traffic": {
+     "bytes": 346266,
+     "context_messages": 705,
+     "critical_path_hops": 360,
+     "max_depth": 6,
+     "max_fan_in": 3,
+     "messages": 2115,
+     "nonce_messages": 705,
+     "partial_messages": 705,
+     "root_fan_in": 3,
+     "seconds": 2.664540131,
+     "sessions": 63
+    },
+    "tree_fee_total_sat": 19404,
+    "tree_txs": 63,
+    "tree_vsize_total": 9702,
+    "unilateral_exit_fee_one_user_sat": 2122,
+    "unilateral_exit_txs_one_user": 7,
+    "unilateral_exit_vbytes_one_user": 1061,
+    "vtxos": 64,
+    "wall_seconds": 6.46
+   },
+   {
+    "build_seconds": 0.412785053,
+    "commitment_fee_sat": 55352,
+    "commitment_vsize": 27676,
+    "cooperative_fee_per_vtxo_sat": 216.21875,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 108.109375,
+    "mass_exit_fee_sat": 148684,
+    "mass_exit_txs": 511,
+    "mass_exit_vbytes": 74342,
+    "mass_exit_vbytes_per_vtxo": 290.3984375,
+    "native_inputs_verified": 768,
+    "native_verify_seconds": 0.153027385,
+    "nova_items": 1280,
+    "nova_steps": 1792,
+    "peak_rss_kib": 61400,
+    "shape": "flat",
+    "signing_seconds": 170.234232979,
+    "statement_bytes": 89621,
+    "statement_check_accepted": true,
+    "statement_digest": "dadcf5b01c352d45fabf8cd05d26f6cf1fd7942efebc7d811a1215441e69b0cd",
+    "traffic": {
+     "bytes": 4901148,
+     "context_messages": 2303,
+     "critical_path_hops": 765,
+     "max_depth": 1,
+     "max_fan_in": 257,
+     "messages": 6909,
+     "nonce_messages": 2303,
+     "partial_messages": 2303,
+     "root_fan_in": 257,
+     "seconds": 78.09595722299989,
+     "sessions": 255
+    },
+    "tree_fee_total_sat": 78540,
+    "tree_txs": 255,
+    "tree_vsize_total": 39270,
+    "unilateral_exit_fee_one_user_sat": 2738,
+    "unilateral_exit_txs_one_user": 9,
+    "unilateral_exit_vbytes_one_user": 1369,
+    "vtxos": 256,
+    "wall_seconds": 171.46
+   },
+   {
+    "build_seconds": 0.313127442,
+    "commitment_fee_sat": 55352,
+    "commitment_vsize": 27676,
+    "cooperative_fee_per_vtxo_sat": 216.21875,
+    "cooperative_l1_txs": 1,
+    "cooperative_vbytes_per_vtxo": 108.109375,
+    "mass_exit_fee_sat": 148684,
+    "mass_exit_txs": 511,
+    "mass_exit_vbytes": 74342,
+    "mass_exit_vbytes_per_vtxo": 290.3984375,
+    "native_inputs_verified": 768,
+    "native_verify_seconds": 0.136729437,
+    "nova_items": 1280,
+    "nova_steps": 1792,
+    "peak_rss_kib": 61544,
+    "shape": "nested",
+    "signing_seconds": 93.500192999,
+    "statement_bytes": 89621,
+    "statement_check_accepted": true,
+    "statement_digest": "65dfde198dea3af5d21d26f8fa8d0b9aefc42e7b4063308e96f4effc84730934",
+    "traffic": {
+     "bytes": 2243994,
+     "context_messages": 3841,
+     "critical_path_hops": 1506,
+     "max_depth": 8,
+     "max_fan_in": 3,
+     "messages": 11523,
+     "nonce_messages": 3841,
+     "partial_messages": 3841,
+     "root_fan_in": 3,
+     "seconds": 28.47025712200002,
+     "sessions": 255
+    },
+    "tree_fee_total_sat": 78540,
+    "tree_txs": 255,
+    "tree_vsize_total": 39270,
+    "unilateral_exit_fee_one_user_sat": 2738,
+    "unilateral_exit_txs_one_user": 9,
+    "unilateral_exit_vbytes_one_user": 1369,
+    "vtxos": 256,
+    "wall_seconds": 94.53
+   }
+  ],
+  "l1_submissions": {
+   "as_expected": 25,
+   "total": 25
+  },
+  "lifecycle": {
+   "binary_sha256": {
+    "ark-nm2": "7aa958866fd392e09b4f57da332f4b2db5157b35a60f7443afcd0f7e09331ad2",
+    "bitcoin-rs": "80648a0cf1a136727651bb34bdbb705740e966a79d55e1382b48b6cee959cfc9",
+    "bitcoind": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08"
+   },
+   "confirmed_blocks": [
+    {
+     "block": "04f33e13df4e318c9ac5df520a82be4e02c935e4faba0489ca181457cc70258b",
+     "height": 442,
+     "include": [
+      "asp-replace-high"
+     ]
+    },
+    {
+     "block": "3728592bc5594d060d05f4c5e5867eb00643236b82cbd4062eac6176ebf51851",
+     "height": 443,
+     "include": [
+      "r1-commitment"
+     ]
+    },
+    {
+     "block": "2ff31b1658f43e04df25f02dc0fe5c3df14511d2084aca5909646ba3acc80ab7",
+     "height": 444,
+     "include": [
+      "r2-commitment"
+     ]
+    },
+    {
+     "block": "39d8ae41e68803440fca51d2e011cd3360b10b018ecb5f91aa168e140eb9e140",
+     "height": 445,
+     "include": [
+      "r1-tree-0"
+     ]
+    },
+    {
+     "block": "0e7c0a2a1440c4b36d06b0341103f71cb6db725398ca9432b7336666c25d1371",
+     "height": 446,
+     "include": [
+      "r1-tree-2"
+     ]
+    },
+    {
+     "block": "7d2e444568ac2fdbfa88ff24864d650ad8ab66bee1db6017f9656e16054716be",
+     "height": 447,
+     "include": [
+      "r2-forfeit-2"
+     ]
+    },
+    {
+     "block": "3e17b97f84404afad2ee71b36f48c264f7a2f830165338ab0902b6ae9323aae6",
+     "height": 458,
+     "include": [
+      "exit-d"
+     ]
+    },
+    {
+     "block": "380346cf202098997a1ed6a8da25ed4c47c29093cbc3beda07518f25eaa41845",
+     "height": 459,
+     "include": [
+      "r1-tree-1"
+     ]
+    },
+    {
+     "block": "443a7d1332d28e35a3881fe67798516f43526a70df99c34b464f97d244a394cc",
+     "height": 460,
+     "include": [
+      "r2-forfeit-0",
+      "r2-forfeit-1"
+     ]
+    },
+    {
+     "block": "56e015be7b03c73eb288520b5d43748f35fdc1008ced79b6264258d18b8f0df6",
+     "height": 484,
+     "include": [
+      "r2-tree-0"
+     ]
+    },
+    {
+     "block": "601b765f53322a64648694da83eac110bb0d4b310ff1e1614fd614d2f4d47d88",
+     "height": 484,
+     "include": [
+      "asp-sweep-r2"
+     ]
+    },
+    {
+     "block": "7cd156d8ee86257342c200ccb33ed0934ba2c21c72596fe46a6f627999b03521",
+     "height": 485,
+     "include": [
+      "e-boarding-recovery"
+     ]
+    }
+   ],
+   "core_version": 310100,
+   "csv_probe": {
+    "bitcoin_rs_block": {
+     "accepted_by_bitcoin_rs": true,
+     "hash": "5eb96dfb1047f7e0c74d7a7d022cb323cda9c8891b1001f0b29ad707d2ec1467"
+    },
+    "core_submitblock": "bad-txns-nonfinal",
+    "deployment": {
+     "bitcoin-rs": {
+      "csv_active": false,
+      "csv_height": 432
+     },
+     "core": {
+      "csv_active": true,
+      "csv_height": 1
+     }
+    },
+    "height": 111,
+    "mempool": {
+     "bitcoin-rs": {
+      "allowed": true,
+      "fee_sat": 274,
+      "reject_reason": null,
+      "stage": null,
+      "vsize": 137
+     },
+     "core": {
+      "allowed": false,
+      "fee_sat": null,
+      "reject_reason": "non-BIP68-final (non-BIP68-final)",
+      "stage": "relative-locktime",
+      "vsize": null
+     }
+    },
+    "reconverged": true
+   },
+   "final_height": 485,
+   "final_tips": {
+    "bitcoin-rs": "7cd156d8ee86257342c200ccb33ed0934ba2c21c72596fe46a6f627999b03521",
+    "core": "7cd156d8ee86257342c200ccb33ed0934ba2c21c72596fe46a6f627999b03521"
+   },
+   "funding_txid": "135fce5ddf0b4d78cf0678b5fa6bbadc917022f5bdce1ab35404aa3a7240408e",
+   "package_probe": {
+    "bitcoin_rs_script": {
+     "child": {
+      "mandatory_flags": "accepted 2 inputs",
+      "schema": "ark-nm2-native-verify-v1",
+      "standard_flags": "bitcoin-rs rejected input 0: Invalid { code: DiscourageUpgradableWitnessProgram }",
+      "txid": "3f86deacc6aa0655675d6b6a0260a6d29f2d554bb823e7c81b6374dd70e6de99"
+     },
+     "parent": {
+      "mandatory_flags": "accepted 1 inputs",
+      "schema": "ark-nm2-native-verify-v1",
+      "standard_flags": "accepted 1 inputs",
+      "txid": "378d471a39d8f7cb7c2cc86585aec1f370eeea43ce8441254d8a63ec0da4d7a4"
+     }
+    },
+    "child": "arkade-style-v3-child",
+    "nodes": {
+     "bitcoin-rs": {
+      "package": {
+       "package_msg": "transaction failed",
+       "replaced-transactions": [],
+       "tx-results": {
+        "a5caf4ef336807a47a2f14f93a3db3d8a441d4adb601cfd5f6cb43f0e1daf432": {
+         "error": "min relay fee not met",
+         "txid": "378d471a39d8f7cb7c2cc86585aec1f370eeea43ce8441254d8a63ec0da4d7a4"
+        },
+        "ee322c83fe99d4484166299798ab7be09881420498941ac46ce593135d1c5074": {
+         "error": "consensus-verification-failed",
+         "txid": "3f86deacc6aa0655675d6b6a0260a6d29f2d554bb823e7c81b6374dd70e6de99"
+        }
+       }
+      },
+      "package_accepted": false,
+      "parent_alone": {
+       "allowed": false,
+       "fee_sat": null,
+       "reject_reason": "min relay fee not met",
+       "stage": "min-relay-fee",
+       "vsize": null
+      }
+     },
+     "core": {
+      "package": {
+       "package_msg": "success",
+       "replaced-transactions": [],
+       "tx-results": {
+        "a5caf4ef336807a47a2f14f93a3db3d8a441d4adb601cfd5f6cb43f0e1daf432": {
+         "fees": {
+          "base": "0E-8",
+          "effective-feerate": "0.00004000",
+          "effective-includes": [
+           "a5caf4ef336807a47a2f14f93a3db3d8a441d4adb601cfd5f6cb43f0e1daf432",
+           "ee322c83fe99d4484166299798ab7be09881420498941ac46ce593135d1c5074"
+          ]
+         },
+         "txid": "378d471a39d8f7cb7c2cc86585aec1f370eeea43ce8441254d8a63ec0da4d7a4",
+         "vsize": 124
+        },
+        "ee322c83fe99d4484166299798ab7be09881420498941ac46ce593135d1c5074": {
+         "fees": {
+          "base": "0.00001108",
+          "effective-feerate": "0.00004000",
+          "effective-includes": [
+           "a5caf4ef336807a47a2f14f93a3db3d8a441d4adb601cfd5f6cb43f0e1daf432",
+           "ee322c83fe99d4484166299798ab7be09881420498941ac46ce593135d1c5074"
+          ]
+         },
+         "txid": "3f86deacc6aa0655675d6b6a0260a6d29f2d554bb823e7c81b6374dd70e6de99",
+         "vsize": 153
+        }
+       }
+      },
+      "package_accepted": true,
+      "parent_alone": {
+       "allowed": false,
+       "fee_sat": null,
+       "reject_reason": "min relay fee not met (min relay fee not met, 0 < 13)",
+       "stage": "min-relay-fee",
+       "vsize": null
+      }
+     }
+    },
+    "note": "Arkade tree format: v3, zero fee, P2A anchor, CPFP child",
+    "parent": "arkade-style-v3-parent",
+    "step": "package"
+   },
+   "plays": 46,
+   "reorg": {
+    "depth": 1,
+    "invalidated": "56e015be7b03c73eb288520b5d43748f35fdc1008ced79b6264258d18b8f0df6",
+    "nodes": {
+     "bitcoin-rs": {
+      "dropped": [],
+      "new_tip": "4632fcce6ff88b854aed1dd4963e4a490c337d0ea31dd77eafe249b016693891",
+      "returned_to_mempool": [
+       "c2bd2a1418f8e5d157025528b805536d267c2d302deaafc230693233318a80b2"
+      ]
+     },
+     "core": {
+      "dropped": [],
+      "new_tip": "4632fcce6ff88b854aed1dd4963e4a490c337d0ea31dd77eafe249b016693891",
+      "returned_to_mempool": [
+       "c2bd2a1418f8e5d157025528b805536d267c2d302deaafc230693233318a80b2"
+      ]
+     }
+    },
+    "note": "shallow reorganization removes C's tree root",
+    "old_tip": "56e015be7b03c73eb288520b5d43748f35fdc1008ced79b6264258d18b8f0df6",
+    "step": "reorg"
+   },
+   "signing": [
+    {
+     "remote_pids": [
+      277545,
+      277546
+     ],
+     "remote_users": [
+      2,
+      3
+     ],
+     "round": "r0",
+     "shape": "nested",
+     "traffic": {
+      "bytes": 4218,
+      "context_messages": 13,
+      "critical_path_hops": 12,
+      "max_depth": 2,
+      "max_fan_in": 3,
+      "messages": 39,
+      "nonce_messages": 13,
+      "partial_messages": 13,
+      "root_fan_in": 3,
+      "seconds": 0.03591620399999999,
+      "sessions": 3
+     }
+    },
+    {
+     "remote_pids": [
+      277545,
+      277546
+     ],
+     "remote_users": [
+      2,
+      3
+     ],
+     "round": "r1",
+     "shape": "nested",
+     "traffic": {
+      "bytes": 4218,
+      "context_messages": 13,
+      "critical_path_hops": 12,
+      "max_depth": 2,
+      "max_fan_in": 3,
+      "messages": 39,
+      "nonce_messages": 13,
+      "partial_messages": 13,
+      "root_fan_in": 3,
+      "seconds": 0.038818773,
+      "sessions": 3
+     }
+    },
+    {
+     "remote_pids": [],
+     "remote_users": [],
+     "round": "r1-flat-comparison",
+     "shape": "flat",
+     "traffic": {
+      "bytes": 3564,
+      "context_messages": 11,
+      "critical_path_hops": 9,
+      "max_depth": 1,
+      "max_fan_in": 5,
+      "messages": 33,
+      "nonce_messages": 11,
+      "partial_messages": 11,
+      "root_fan_in": 5,
+      "seconds": 0.033820132,
+      "sessions": 3
+     }
+    },
+    {
+     "remote_pids": [
+      277545,
+      277546
+     ],
+     "remote_users": [
+      2,
+      3
+     ],
+     "round": "r2",
+     "shape": "nested",
+     "traffic": {
+      "bytes": 882,
+      "context_messages": 3,
+      "critical_path_hops": 3,
+      "max_depth": 1,
+      "max_fan_in": 3,
+      "messages": 9,
+      "nonce_messages": 3,
+      "partial_messages": 3,
+      "root_fan_in": 3,
+      "seconds": 0.010380861,
+      "sessions": 1
+     }
+    }
+   ],
+   "signing_wall_seconds": 0.311,
+   "source_dirty": false,
+   "source_revision": "fa87365e5f89a43fe2cb18d5afa69b7e21c020be",
+   "stage_mismatches": [],
+   "statements": [
+    {
+     "bytes": 1671,
+     "coverage": [
+      {
+       "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+       "established": false,
+       "method": "NodeObservation",
+       "property": "funding outputs exist, are confirmed and unspent"
+      },
+      {
+       "detail": "recomputed from participants, policy and the BIP341 derivation",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "tree structure, script templates and cosigner policy keys"
+      },
+      {
+       "detail": "4 transactions",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "per-transaction value conservation and fee bound"
+      },
+      {
+       "detail": "8 spends",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "single-use spend identities inside the committed graph"
+      },
+      {
+       "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+       "established": true,
+       "method": "NativeScriptEngine",
+       "property": "signatures and script execution"
+      },
+      {
+       "detail": "outside the statement checker; the harness records block hashes from both nodes",
+       "established": false,
+       "method": "NotCovered",
+       "property": "transaction inclusion and canonical-chain acceptance"
+      }
+     ],
+     "digest": "5ac4c710ac1a82e4466f5da3fdaea0304de25e777fc12174a1b7ac647d405742",
+     "name": "r0",
+     "native_check_accepted": true
+    },
+    {
+     "bytes": 1671,
+     "coverage": [
+      {
+       "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+       "established": false,
+       "method": "NodeObservation",
+       "property": "funding outputs exist, are confirmed and unspent"
+      },
+      {
+       "detail": "recomputed from participants, policy and the BIP341 derivation",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "tree structure, script templates and cosigner policy keys"
+      },
+      {
+       "detail": "4 transactions",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "per-transaction value conservation and fee bound"
+      },
+      {
+       "detail": "8 spends",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "single-use spend identities inside the committed graph"
+      },
+      {
+       "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+       "established": true,
+       "method": "NativeScriptEngine",
+       "property": "signatures and script execution"
+      },
+      {
+       "detail": "outside the statement checker; the harness records block hashes from both nodes",
+       "established": false,
+       "method": "NotCovered",
+       "property": "transaction inclusion and canonical-chain acceptance"
+      }
+     ],
+     "digest": "707a1f8729f01c38ed54e34723e667fc1635e4904ee971502c5c8591c3bec9a8",
+     "name": "r1",
+     "native_check_accepted": true
+    },
+    {
+     "bytes": 1671,
+     "coverage": [
+      {
+       "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+       "established": false,
+       "method": "NodeObservation",
+       "property": "funding outputs exist, are confirmed and unspent"
+      },
+      {
+       "detail": "recomputed from participants, policy and the BIP341 derivation",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "tree structure, script templates and cosigner policy keys"
+      },
+      {
+       "detail": "4 transactions",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "per-transaction value conservation and fee bound"
+      },
+      {
+       "detail": "8 spends",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "single-use spend identities inside the committed graph"
+      },
+      {
+       "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+       "established": true,
+       "method": "NativeScriptEngine",
+       "property": "signatures and script execution"
+      },
+      {
+       "detail": "outside the statement checker; the harness records block hashes from both nodes",
+       "established": false,
+       "method": "NotCovered",
+       "property": "transaction inclusion and canonical-chain acceptance"
+      }
+     ],
+     "digest": "a4559bf294c833a859d3e47bf4caacaf26de6557c5ae9aa503c78809ab48295c",
+     "name": "r1-flat",
+     "native_check_accepted": true
+    },
+    {
+     "bytes": 1700,
+     "coverage": [
+      {
+       "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+       "established": false,
+       "method": "NodeObservation",
+       "property": "funding outputs exist, are confirmed and unspent"
+      },
+      {
+       "detail": "recomputed from participants, policy and the BIP341 derivation",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "tree structure, script templates and cosigner policy keys"
+      },
+      {
+       "detail": "5 transactions",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "per-transaction value conservation and fee bound"
+      },
+      {
+       "detail": "8 spends",
+       "established": true,
+       "method": "NativeStatementRules",
+       "property": "single-use spend identities inside the committed graph"
+      },
+      {
+       "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+       "established": true,
+       "method": "NativeScriptEngine",
+       "property": "signatures and script execution"
+      },
+      {
+       "detail": "outside the statement checker; the harness records block hashes from both nodes",
+       "established": false,
+       "method": "NotCovered",
+       "property": "transaction inclusion and canonical-chain acceptance"
+      }
+     ],
+     "digest": "dc0d63b7e6d7155108c0f484fee6b19b26b6cd3e09ca739737f6ff86565c0eb1",
+     "name": "r2",
+     "native_check_accepted": true
+    }
+   ],
+   "status": "passed",
+   "total_wall_seconds": 21.797,
+   "unexpected_outcomes": 0,
+   "utxo_state": {
+    "checked_outpoints": 48,
+    "differences": []
+   }
+  },
+  "scale": [
+   {
+    "checked_outpoints": 68,
+    "executed_against": [
+     "bitcoin-rs node (native engine)",
+     "Bitcoin Core 31.1"
+    ],
+    "final_height": 458,
+    "l1_by_kind": {
+     "commitment": {
+      "count": 1,
+      "fee_sat": 3748,
+      "vsize": 1874
+     },
+     "tree": {
+      "count": 15,
+      "fee_sat": 4620,
+      "vsize": 2310
+     },
+     "unilateral-exit": {
+      "count": 16,
+      "fee_sat": 4384,
+      "vsize": 2192
+     }
+    },
+    "mode": "scale-16-nested",
+    "plays": 55,
+    "signing": [
+     {
+      "remote_pids": [],
+      "remote_users": [],
+      "round": "scale-16",
+      "shape": "nested",
+      "traffic": {
+       "bytes": 45498,
+       "context_messages": 113,
+       "critical_path_hops": 78,
+       "max_depth": 4,
+       "max_fan_in": 3,
+       "messages": 339,
+       "nonce_messages": 113,
+       "partial_messages": 113,
+       "root_fan_in": 3,
+       "seconds": 0.262268219,
+       "sessions": 15
+      }
+     }
+    ],
+    "signing_wall_seconds": 0.491,
+    "statement": {
+     "bytes": 5859,
+     "digest": "bd40c1966de39c8c9b2c5baf270d2304f8afae658deffca4836f2ca3320d5504"
+    },
+    "status": "passed",
+    "total_wall_seconds": 21.139,
+    "unexpected_outcomes": 0,
+    "utxo_differences": 0
+   },
+   {
+    "checked_outpoints": 260,
+    "executed_against": [
+     "bitcoin-rs node (native engine)",
+     "Bitcoin Core 31.1"
+    ],
+    "final_height": 460,
+    "l1_by_kind": {
+     "commitment": {
+      "count": 1,
+      "fee_sat": 14068,
+      "vsize": 7034
+     },
+     "tree": {
+      "count": 63,
+      "fee_sat": 19404,
+      "vsize": 9702
+     },
+     "unilateral-exit": {
+      "count": 64,
+      "fee_sat": 17536,
+      "vsize": 8768
+     }
+    },
+    "mode": "scale-64-nested",
+    "plays": 201,
+    "signing": [
+     {
+      "remote_pids": [],
+      "remote_users": [],
+      "round": "scale-64",
+      "shape": "nested",
+      "traffic": {
+       "bytes": 346266,
+       "context_messages": 705,
+       "critical_path_hops": 360,
+       "max_depth": 6,
+       "max_fan_in": 3,
+       "messages": 2115,
+       "nonce_messages": 705,
+       "partial_messages": 705,
+       "root_fan_in": 3,
+       "seconds": 2.6734631389999994,
+       "sessions": 63
+      }
+     }
+    ],
+    "signing_wall_seconds": 6.623,
+    "statement": {
+     "bytes": 22611,
+     "digest": "fb578facbe87f28abbe78a5ee8d1f3b33397ef089a3e83c6e7322fd0f83dfdea"
+    },
+    "status": "passed",
+    "total_wall_seconds": 30.813,
+    "unexpected_outcomes": 0,
+    "utxo_differences": 0
+   },
+   {
+    "checked_outpoints": 1028,
+    "executed_against": [
+     "bitcoin-rs node (native engine)",
+     "Bitcoin Core 31.1"
+    ],
+    "final_height": 462,
+    "l1_by_kind": {
+     "commitment": {
+      "count": 1,
+      "fee_sat": 55352,
+      "vsize": 27676
+     },
+     "tree": {
+      "count": 255,
+      "fee_sat": 78540,
+      "vsize": 39270
+     },
+     "unilateral-exit": {
+      "count": 256,
+      "fee_sat": 70144,
+      "vsize": 35072
+     }
+    },
+    "mode": "scale-256-nested",
+    "plays": 779,
+    "signing": [
+     {
+      "remote_pids": [],
+      "remote_users": [],
+      "round": "scale-256",
+      "shape": "nested",
+      "traffic": {
+       "bytes": 2243994,
+       "context_messages": 3841,
+       "critical_path_hops": 1506,
+       "max_depth": 8,
+       "max_fan_in": 3,
+       "messages": 11523,
+       "nonce_messages": 3841,
+       "partial_messages": 3841,
+       "root_fan_in": 3,
+       "seconds": 28.85076944100002,
+       "sessions": 255
+      }
+     }
+    ],
+    "signing_wall_seconds": 95.7,
+    "statement": {
+     "bytes": 89621,
+     "digest": "ffae1c1ed16f4a267dba62b785e490c63df2cbc845189b8ddd15c282a28560a7"
+    },
+    "status": "passed",
+    "total_wall_seconds": 137.246,
+    "unexpected_outcomes": 0,
+    "utxo_differences": 0
+   }
+  ]
+ },
+ "nova": {
+  "bench": {
+   "rows": [
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 6.053238694,
+     "constraints_per_step": 1050,
+     "fold_s": 5.960326729,
+     "items": 20,
+     "peak_rss_kb": 152696,
+     "peak_rss_kb_after_prove": 151200,
+     "proof_bytes": 11104,
+     "prove_total_s": 12.168643542,
+     "setup_s": 3.658605412,
+     "source": "synthetic",
+     "steps": 28,
+     "users": 4,
+     "verify_full_s": 0.176558044,
+     "verify_succinct_s": 0.207090474
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 5.620506503,
+     "constraints_per_step": 1050,
+     "fold_s": 24.347876496,
+     "items": 80,
+     "peak_rss_kb": 174364,
+     "peak_rss_kb_after_prove": 174332,
+     "proof_bytes": 11104,
+     "prove_total_s": 30.64164101,
+     "setup_s": 3.658605412,
+     "source": "synthetic",
+     "steps": 112,
+     "users": 16,
+     "verify_full_s": 0.19660606,
+     "verify_succinct_s": 0.149014488
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 5.567631491,
+     "constraints_per_step": 1050,
+     "fold_s": 113.005425356,
+     "items": 320,
+     "peak_rss_kb": 179592,
+     "peak_rss_kb_after_prove": 179088,
+     "proof_bytes": 11104,
+     "prove_total_s": 121.22639417,
+     "setup_s": 3.658605412,
+     "source": "synthetic",
+     "steps": 448,
+     "users": 64,
+     "verify_full_s": 0.228653557,
+     "verify_succinct_s": 0.214176847
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 6.250377379,
+     "constraints_per_step": 1050,
+     "fold_s": 464.021825479,
+     "items": 1280,
+     "peak_rss_kb": 180644,
+     "peak_rss_kb_after_prove": 180632,
+     "proof_bytes": 11104,
+     "prove_total_s": 480.414365694,
+     "setup_s": 3.658605412,
+     "source": "synthetic",
+     "steps": 1792,
+     "users": 256,
+     "verify_full_s": 0.26326517,
+     "verify_succinct_s": 0.175659993
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 7.733755522,
+     "constraints_per_step": 1050,
+     "fold_s": 6.380322977,
+     "items": 20,
+     "peak_rss_kb": 181888,
+     "peak_rss_kb_after_prove": 181412,
+     "proof_bytes": 11104,
+     "prove_total_s": 14.283218885,
+     "setup_s": 3.658605412,
+     "source": "/root/ark-nm2/runs/bench/nova-witness-nested-4.json",
+     "steps": 28,
+     "users": 0,
+     "verify_full_s": 0.207973052,
+     "verify_succinct_s": 0.234205865
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 6.105105638,
+     "constraints_per_step": 1050,
+     "fold_s": 28.493236899,
+     "items": 80,
+     "peak_rss_kb": 181892,
+     "peak_rss_kb_after_prove": 181892,
+     "proof_bytes": 11104,
+     "prove_total_s": 35.755554355,
+     "setup_s": 3.658605412,
+     "source": "/root/ark-nm2/runs/bench/nova-witness-nested-16.json",
+     "steps": 112,
+     "users": 0,
+     "verify_full_s": 0.165571599,
+     "verify_succinct_s": 0.172721361
+    },
+    {
+     "accepted_full": true,
+     "accepted_succinct": true,
+     "compress_s": 5.688180562,
+     "constraints_per_step": 1050,
+     "fold_s": 100.208587447,
+     "items": 320,
+     "peak_rss_kb": 189464,
+     "peak_rss_kb_after_prove": 189460,
+     "proof_bytes": 11104,
+     "prove_total_s": 108.592363525,
+     "setup_s": 3.658605412,
+     "source": "/root/ark-nm2/runs/bench/nova-witness-nested-64.json",
+     "steps": 448,
+     "users": 0,
+     "verify_full_s": 0.209576453,
+     "verify_succinct_s": 0.175083863
+    }
+   ],
+   "schema": "ark-transition-nova-bench-v1",
+   "threads": "8",
+   "vk_digest": "22ad3282b71196a227d95b2216921a78e8d362d96702a3377347c0d085dfcdad"
+  },
+  "mode": {
+   "ark_nova_sha256": "ced06824eceb2d84d172c73659107b2ceed96c855581ba6c6e3848b5608a1e81",
+   "envelope_controls": [
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "network",
+     "name": "wrong-network",
+     "observed_stage": "network"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "statement-digest",
+     "name": "proof-attached-to-other-round",
+     "observed_stage": "statement-digest"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "public-inputs",
+     "name": "altered-public-inputs",
+     "observed_stage": "public-inputs"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "verifier-key",
+     "name": "unpinned-verifier-key",
+     "observed_stage": "verifier-key"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "unrecognized-schema",
+     "name": "unrecognized-schema",
+     "observed_stage": "unrecognized-schema"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "incomplete-transcript",
+     "name": "incomplete-transcript",
+     "observed_stage": "incomplete-transcript"
+    },
+    {
+     "as_expected": true,
+     "executed_against": [
+      "ark-nm2 verify-proof",
+      "nova-verifier"
+     ],
+     "expected_stage": "nova-verifier",
+     "name": "truncated-proof",
+     "observed_stage": "nova-verifier"
+    },
+    {
+     "as_expected": true,
+     "detail": "the Nova proof for the statement still verifies; the settlement verdict requires the native script check, which rejects the altered tree signature",
+     "executed_against": [
+      "nova-verifier",
+      "bitcoin-rs-script"
+     ],
+     "expected_stage": "script-verification",
+     "name": "valid-proof-invalid-spend",
+     "observed_stage": "script-verification"
+    }
+   ],
+   "mutate_exit": 0,
+   "prover_mutations": {
+    "all_rejected": true,
+    "baseline_accepted": true,
+    "count": 22,
+    "mutations": [
+     {
+      "detail": "tx 0: inputs 5806000 != outputs 5804833 + fee 1168",
+      "expected_stage": "prove",
+      "name": "a_output_value_changed/precheck",
+      "observed_stage": "prove:precheck",
+      "rejected": true
+     },
+     {
+      "detail": "circuit: step 7 unsatisfied (constraint Some(77))",
+      "expected_stage": "prove",
+      "name": "a_output_value_changed/circuit",
+      "observed_stage": "prove:circuit",
+      "rejected": true
+     },
+     {
+      "detail": "item 1: duplicate spend_id 75951bc338b0a8ee6bc2f20be2b26d753042abb5786f54f8f03242dd12620a82",
+      "expected_stage": "prove",
+      "name": "b_duplicate_spend_id/precheck",
+      "observed_stage": "prove:precheck",
+      "rejected": true
+     },
+     {
+      "detail": "circuit: step 25 unsatisfied (constraint Some(1031))",
+      "expected_stage": "prove",
+      "name": "b_duplicate_spend_id/circuit",
+      "observed_stage": "prove:circuit",
+      "rejected": true
+     },
+     {
+      "detail": "tx 0: fee 200001 above fee_bound 200000",
+      "expected_stage": "prove",
+      "name": "c_fee_above_bound/precheck",
+      "observed_stage": "prove:precheck",
+      "rejected": true
+     },
+     {
+      "detail": "circuit: step 7 unsatisfied (constraint Some(143))",
+      "expected_stage": "prove",
+      "name": "c_fee_above_bound/circuit",
+      "observed_stage": "prove:circuit",
+      "rejected": true
+     },
+     {
+      "detail": "3 checks run",
+      "expected_stage": "verify",
+      "name": "d1_other_statement_digest",
+      "observed_stage": "verify:statement_digest",
+      "rejected": true
+     },
+     {
+      "detail": "11 checks run",
+      "expected_stage": "verify",
+      "name": "d2_public_rewritten_for_other_statement",
+      "observed_stage": "verify:nova_verify",
+      "rejected": true
+     },
+     {
+      "detail": "10 checks run",
+      "expected_stage": "verify",
+      "name": "e1_truncated_half",
+      "observed_stage": "verify:proof_decodes",
+      "rejected": true
+     },
+     {
+      "detail": "10 checks run",
+      "expected_stage": "verify",
+      "name": "e2_truncated_last_byte",
+      "observed_stage": "verify:proof_decodes",
+      "rejected": true
+     },
+     {
+      "detail": "10 checks run",
+      "expected_stage": "verify",
+      "name": "e3_appended_byte",
+      "observed_stage": "verify:proof_decodes",
+      "rejected": true
+     },
+     {
+      "detail": "11 checks run",
+      "expected_stage": "verify",
+      "name": "e4_flipped_byte",
+      "observed_stage": "verify:nova_verify",
+      "rejected": true
+     },
+     {
+      "detail": "12 checks run",
+      "expected_stage": "verify",
+      "name": "f1_zn_sum_out",
+      "observed_stage": "verify:zn_matches_public",
+      "rejected": true
+     },
+     {
+      "detail": "12 checks run",
+      "expected_stage": "verify",
+      "name": "f2_zn_r1",
+      "observed_stage": "verify:zn_matches_public",
+      "rejected": true
+     },
+     {
+      "detail": "12 checks run",
+      "expected_stage": "verify",
+      "name": "f3_zn_phase",
+      "observed_stage": "verify:zn_matches_public",
+      "rejected": true
+     },
+     {
+      "detail": "11 checks run",
+      "expected_stage": "verify",
+      "name": "g1_proof_of_Y_with_public_of_X",
+      "observed_stage": "verify:nova_verify",
+      "rejected": true
+     },
+     {
+      "detail": "11 checks run",
+      "expected_stage": "verify",
+      "name": "g2_proof_of_X_with_public_of_Y",
+      "observed_stage": "verify:nova_verify",
+      "rejected": true
+     },
+     {
+      "detail": "8 checks run",
+      "expected_stage": "verify",
+      "name": "h1_steps_altered",
+      "observed_stage": "verify:steps_match_items",
+      "rejected": true
+     },
+     {
+      "detail": "2 checks run",
+      "expected_stage": "verify",
+      "name": "h2_vk_digest_altered",
+      "observed_stage": "verify:vk_digest",
+      "rejected": true
+     },
+     {
+      "detail": "1 checks run",
+      "expected_stage": "verify",
+      "name": "h3_unknown_schema",
+      "observed_stage": "verify:schema",
+      "rejected": true
+     },
+     {
+      "detail": "5 checks run",
+      "expected_stage": "verify",
+      "name": "h4_expect_altered",
+      "observed_stage": "verify:expect_block",
+      "rejected": true
+     },
+     {
+      "detail": "7 checks run",
+      "expected_stage": "verify",
+      "name": "h5_z0_gamma_altered",
+      "observed_stage": "verify:z0_recomputed",
+      "rejected": true
+     }
+    ]
+   },
+   "rounds": {
+    "r1": {
+     "native_check": {
+      "accepted": true,
+      "coverage": [
+       {
+        "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+        "established": false,
+        "method": "NodeObservation",
+        "property": "funding outputs exist, are confirmed and unspent"
+       },
+       {
+        "detail": "recomputed from participants, policy and the BIP341 derivation",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "tree structure, script templates and cosigner policy keys"
+       },
+       {
+        "detail": "4 transactions",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "per-transaction value conservation and fee bound"
+       },
+       {
+        "detail": "8 spends",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "single-use spend identities inside the committed graph"
+       },
+       {
+        "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+        "established": true,
+        "method": "NativeScriptEngine",
+        "property": "signatures and script execution"
+       },
+       {
+        "detail": "outside the statement checker; the harness records block hashes from both nodes",
+        "established": false,
+        "method": "NotCovered",
+        "property": "transaction inclusion and canonical-chain acceptance"
+       }
+      ],
+      "findings": 31,
+      "seconds": 0.0122
+     },
+     "nova": {
+      "proof_bytes": 11104,
+      "prove_peak_rss_kib": 150920,
+      "prove_wall_seconds": 15.35,
+      "public": {
+       "constraints_per_step": 1050,
+       "expect": {
+        "input_count": 8,
+        "sum_fee_sat": 2092,
+        "sum_in_sat": 7419540,
+        "sum_out_sat": 7417448,
+        "tx_count": 4
+       },
+       "fee_bound_sat": 200000,
+       "gamma": "12003d0436121472c941a98c5b4a992f401c073fbfa39cf595f715d7e3af8091",
+       "proof_bytes": 11104,
+       "r1": "05d42fb646ad910e6a393ff76e1cd30f258a647a0e4028dd25c2753de2de1c85",
+       "schema": "ark-transition-nova-public-v1",
+       "statement_digest": "707a1f8729f01c38ed54e34723e667fc1635e4904ee971502c5c8591c3bec9a8",
+       "steps": 28,
+       "timings": {
+        "compress_s": 5.404066278,
+        "fold_s": 5.832145058,
+        "setup_s": 3.90596836
+       },
+       "vk_digest": "22ad3282b71196a227d95b2216921a78e8d362d96702a3377347c0d085dfcdad",
+       "z0": [
+        "00000000000000000000000000000000707a1f8729f01c38ed54e34723e667fc",
+        "000000000000000000000000000000001635e4904ee971502c5c8591c3bec9a8",
+        "0000000000000000000000000000000000000000000000000000000000030d40",
+        "12003d0436121472c941a98c5b4a992f401c073fbfa39cf595f715d7e3af8091",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "20b238591bbba0bd2df18266f5f96d018abd92315772c5142715ae99557d399d",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+        "20b238591bbba0bd2df18266f5f96d018abd92315772c5142715ae99557d399d",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000"
+       ],
+       "zn": [
+        "00000000000000000000000000000000707a1f8729f01c38ed54e34723e667fc",
+        "000000000000000000000000000000001635e4904ee971502c5c8591c3bec9a8",
+        "0000000000000000000000000000000000000000000000000000000000030d40",
+        "12003d0436121472c941a98c5b4a992f401c073fbfa39cf595f715d7e3af8091",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000713694",
+        "0000000000000000000000000000000000000000000000000000000000712e68",
+        "000000000000000000000000000000000000000000000000000000000000082c",
+        "05d42fb646ad910e6a393ff76e1cd30f258a647a0e4028dd25c2753de2de1c85",
+        "2cc097bd78c52041ffceffb9ca4f065927cb90daffda4e7928346f65583d8e9b",
+        "390b9dd41d1bcc1f0b09e6aff1a6ffc68d79149507156e8933d3faffc91070e0",
+        "2cc097bd78c52041ffceffb9ca4f065927cb90daffda4e7928346f65583d8e9b",
+        "00bc8c83fd0b3434fd397d39000c38114e62ac6159aa5153a1ac7939ea6bf235",
+        "0000000000000000000000000000000000000000000000000000000000000008",
+        "0000000000000000000000000000000000000000000000000000000000000008",
+        "0000000000000000000000000000000000000000000000000000000000000004",
+        "0000000000000000000000000000000000000000000000000000000000000001"
+       ]
+      },
+      "verification": {
+       "accepted": true,
+       "backend": "nova-ark-transition-v1",
+       "checks": [
+        [
+         "schema",
+         true
+        ],
+        [
+         "network",
+         true
+        ],
+        [
+         "statement-digest",
+         true
+        ],
+        [
+         "public-inputs",
+         true
+        ],
+        [
+         "verifier-key-pin",
+         true
+        ],
+        [
+         "complete-transcript",
+         true
+        ],
+        [
+         "nova-verifier",
+         true
+        ]
+       ],
+       "coverage": [
+        {
+         "detail": "over the records committed by the proof's Poseidon chain",
+         "established": true,
+         "method": "NovaProof",
+         "property": "per-transaction value conservation and fee bound"
+        },
+        {
+         "detail": "sorted-list and grand-product permutation argument over 248-bit spend identifiers",
+         "established": true,
+         "method": "NovaProof",
+         "property": "single-use spend identities inside the committed graph"
+        },
+        {
+         "detail": "the verifier recomputed the witness from the statement bytes",
+         "established": true,
+         "method": "NativeStatementRules",
+         "property": "records equal the statement's transactions"
+        },
+        {
+         "detail": "the circuit computes no sighash and checks no signature",
+         "established": false,
+         "method": "NotCovered",
+         "property": "signatures and script execution"
+        },
+        {
+         "detail": "no SPV, header or UTXO-set relation is in this circuit",
+         "established": false,
+         "method": "NotCovered",
+         "property": "transaction inclusion, canonical chain and UTXO non-spentness"
+        }
+       ],
+       "rejected_at": null,
+       "schema": "ark-transition-proof-verification-v1",
+       "verify_seconds": 3.765162203
+      }
+     },
+     "statement": "statement-r1.bin"
+    },
+    "r2": {
+     "native_check": {
+      "accepted": true,
+      "coverage": [
+       {
+        "detail": "established only by the harness's gettxout lookups on bitcoin-rs and Core at the anchor; the statement records the anchor",
+        "established": false,
+        "method": "NodeObservation",
+        "property": "funding outputs exist, are confirmed and unspent"
+       },
+       {
+        "detail": "recomputed from participants, policy and the BIP341 derivation",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "tree structure, script templates and cosigner policy keys"
+       },
+       {
+        "detail": "5 transactions",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "per-transaction value conservation and fee bound"
+       },
+       {
+        "detail": "8 spends",
+        "established": true,
+        "method": "NativeStatementRules",
+        "property": "single-use spend identities inside the committed graph"
+       },
+       {
+        "detail": "8 inputs verified by bitcoin-rs-script; node acceptance is recorded separately by the harness",
+        "established": true,
+        "method": "NativeScriptEngine",
+        "property": "signatures and script execution"
+       },
+       {
+        "detail": "outside the statement checker; the harness records block hashes from both nodes",
+        "established": false,
+        "method": "NotCovered",
+        "property": "transaction inclusion and canonical-chain acceptance"
+       }
+      ],
+      "findings": 29,
+      "seconds": 0.01
+     },
+     "nova": {
+      "proof_bytes": 11104,
+      "prove_peak_rss_kib": 150844,
+      "prove_wall_seconds": 15.45,
+      "public": {
+       "constraints_per_step": 1050,
+       "expect": {
+        "input_count": 8,
+        "sum_fee_sat": 2274,
+        "sum_in_sat": 6006508,
+        "sum_out_sat": 6004234,
+        "tx_count": 5
+       },
+       "fee_bound_sat": 200000,
+       "gamma": "2a23bf9f5168adea9ccc0f84e6ac160db56d1dd8cd05410f613caab87f13bc9e",
+       "proof_bytes": 11104,
+       "r1": "07523b71a2b606d7ca655b920bc919b15ead368ddb31f197558147fd74dfd875",
+       "schema": "ark-transition-nova-public-v1",
+       "statement_digest": "dc0d63b7e6d7155108c0f484fee6b19b26b6cd3e09ca739737f6ff86565c0eb1",
+       "steps": 32,
+       "timings": {
+        "compress_s": 5.553053392,
+        "fold_s": 6.469139478,
+        "setup_s": 3.194210497
+       },
+       "vk_digest": "22ad3282b71196a227d95b2216921a78e8d362d96702a3377347c0d085dfcdad",
+       "z0": [
+        "00000000000000000000000000000000dc0d63b7e6d7155108c0f484fee6b19b",
+        "0000000000000000000000000000000026b6cd3e09ca739737f6ff86565c0eb1",
+        "0000000000000000000000000000000000000000000000000000000000030d40",
+        "2a23bf9f5168adea9ccc0f84e6ac160db56d1dd8cd05410f613caab87f13bc9e",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "2f70d523d9130cd95675d8ce064043461dd41450996375ac917b366bd56ffdcb",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+        "2f70d523d9130cd95675d8ce064043461dd41450996375ac917b366bd56ffdcb",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000000000000000000000000000"
+       ],
+       "zn": [
+        "00000000000000000000000000000000dc0d63b7e6d7155108c0f484fee6b19b",
+        "0000000000000000000000000000000026b6cd3e09ca739737f6ff86565c0eb1",
+        "0000000000000000000000000000000000000000000000000000000000030d40",
+        "2a23bf9f5168adea9ccc0f84e6ac160db56d1dd8cd05410f613caab87f13bc9e",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "00000000000000000000000000000000000000000000000000000000005ba6ec",
+        "00000000000000000000000000000000000000000000000000000000005b9e0a",
+        "00000000000000000000000000000000000000000000000000000000000008e2",
+        "07523b71a2b606d7ca655b920bc919b15ead368ddb31f197558147fd74dfd875",
+        "14e0cb735e14d8e0184ecce3d570e136788f2e6b93e5587494b59f06492c0fd8",
+        "3d1fa4f8f3d206db1fe4270bc34885f9ca563521482d2539c728a9e83b366486",
+        "14e0cb735e14d8e0184ecce3d570e136788f2e6b93e5587494b59f06492c0fd8",
+        "00f327f2536dbaeab4f9ba5d087c73168c2a9b072027888a52eef464993473e4",
+        "0000000000000000000000000000000000000000000000000000000000000008",
+        "0000000000000000000000000000000000000000000000000000000000000008",
+        "0000000000000000000000000000000000000000000000000000000000000005",
+        "0000000000000000000000000000000000000000000000000000000000000001"
+       ]
+      },
+      "verification": {
+       "accepted": true,
+       "backend": "nova-ark-transition-v1",
+       "checks": [
+        [
+         "schema",
+         true
+        ],
+        [
+         "network",
+         true
+        ],
+        [
+         "statement-digest",
+         true
+        ],
+        [
+         "public-inputs",
+         true
+        ],
+        [
+         "verifier-key-pin",
+         true
+        ],
+        [
+         "complete-transcript",
+         true
+        ],
+        [
+         "nova-verifier",
+         true
+        ]
+       ],
+       "coverage": [
+        {
+         "detail": "over the records committed by the proof's Poseidon chain",
+         "established": true,
+         "method": "NovaProof",
+         "property": "per-transaction value conservation and fee bound"
+        },
+        {
+         "detail": "sorted-list and grand-product permutation argument over 248-bit spend identifiers",
+         "established": true,
+         "method": "NovaProof",
+         "property": "single-use spend identities inside the committed graph"
+        },
+        {
+         "detail": "the verifier recomputed the witness from the statement bytes",
+         "established": true,
+         "method": "NativeStatementRules",
+         "property": "records equal the statement's transactions"
+        },
+        {
+         "detail": "the circuit computes no sighash and checks no signature",
+         "established": false,
+         "method": "NotCovered",
+         "property": "signatures and script execution"
+        },
+        {
+         "detail": "no SPV, header or UTXO-set relation is in this circuit",
+         "established": false,
+         "method": "NotCovered",
+         "property": "transaction inclusion, canonical chain and UTXO non-spentness"
+        }
+       ],
+       "rejected_at": null,
+       "schema": "ark-transition-proof-verification-v1",
+       "verify_seconds": 3.501953542
+      }
+     },
+     "statement": "statement-r2.bin"
+    }
+   },
+   "schema": "ark-nova-mode-v1",
+   "vk_digest": "22ad3282b71196a227d95b2216921a78e8d362d96702a3377347c0d085dfcdad"
+  }
+ },
+ "schema": "ark-nested-musig2-results-v1"
+}
