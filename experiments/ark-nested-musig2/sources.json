@@ -1,0 +1,80 @@
+{
+  "schema": "ark-nested-musig2-sources-v1",
+  "inspected_on": "2026-11-21",
+  "sources": [
+    {
+      "name": "bitcoin-rs base",
+      "repository": "https://github.com/patrickdugan/bitcoin-rs",
+      "ref": "dev",
+      "commit": "856958e493b55dae6926b872651a01a6bd5b6109",
+      "role": "node under test; tools/nested-musig2 signer library"
+    },
+    {
+      "name": "NestedMuSig2 BIP draft",
+      "repository": "https://github.com/bitcoin/bips/pull/2297",
+      "commit": "4523ee0eed72f2367a1d1774941f70b2aca5af43",
+      "role": "signing specification, as pinned by tools/nested-musig2"
+    },
+    {
+      "name": "NestedMuSig2 conformance follow-up",
+      "repository": "https://github.com/BEULAHEVANJALIN/bips/pull/2",
+      "commit": "44e9d2518e7fa9073fd904f6224b221057c48c2c",
+      "role": "conformance vectors used by tools/nested-musig2"
+    },
+    {
+      "name": "arkade-os/rust-sdk",
+      "repository": "https://github.com/arkade-os/rust-sdk",
+      "ref": "master",
+      "commit": "c786942969dd16f9e94fc165a99a329a39ed183d",
+      "role": "ark-core 0.12.1: default VTXO and boarding scripts, built and executed by tools/ark-nested-musig2/interop"
+    },
+    {
+      "name": "arkade-os/arkd",
+      "repository": "https://github.com/arkade-os/arkd",
+      "ref": "master",
+      "commit": "fee16a7ba28c3e508c892b07cb7db9028a715f8f",
+      "role": "read only: tree transaction format (v3, P2A anchor), cooperative leaf key order (pkg/ark-lib/script/vtxo_script.go:32)"
+    },
+    {
+      "name": "ArkLabsHQ/arkade-regtest",
+      "repository": "https://github.com/ArkLabsHQ/arkade-regtest",
+      "ref": "master",
+      "commit": "666fccb2910b7569621cacc7a9e59a946bd8cfe6",
+      "role": "pinned; not executed"
+    },
+    {
+      "name": "ark-bitcoin/bark",
+      "repository": "https://github.com/ark-bitcoin/bark",
+      "ref": "master",
+      "commit": "1ab6ccbb33d803111c390fd667f1f355bc6f4957",
+      "role": "read only: board funding check in lib/src/board.rs (BoardBuilder::new_from_vtxo), VTXO policy scripts"
+    },
+    {
+      "name": "patrickdugan/shinigami",
+      "repository": "https://github.com/patrickdugan/shinigami",
+      "ref": "taproot-provable",
+      "commit": "19cb9fab4664e8f7fc4936f018d9c59ccac5883c",
+      "role": "pinned; M17's semantics source; Taproot extension not built"
+    },
+    {
+      "name": "patrickdugan/zk-rusto-no-bitcoino",
+      "repository": "https://github.com/patrickdugan/zk-rusto-no-bitcoino",
+      "ref": "main",
+      "commit": "a183eeffe63715cedca729100a1f74267a68200d",
+      "role": "base of branch feat/ark-transition-nova; integrations/bitvm3-nova/m17, m18 and m14 inspected"
+    },
+    {
+      "name": "Bitcoin Core",
+      "version": "31.1",
+      "archive": "bitcoin-31.1-x86_64-linux-gnu.tar.gz",
+      "archive_sha256": "b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e",
+      "bitcoind_sha256": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08",
+      "role": "reference node, pinned by crates/rpc/core-compat.toml and installed by scripts/install-bitcoind.sh"
+    },
+    {
+      "name": "Bitcoin Optech Ark topic",
+      "repository": "https://bitcoinops.org/en/topics/ark/",
+      "role": "background reading; not fetched during this work"
+    }
+  ]
+}
