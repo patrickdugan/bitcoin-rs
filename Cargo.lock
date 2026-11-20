@@ -455,6 +455,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitcoin-rs-nested-musig2"
+version = "0.15.0"
+dependencies = [
+ "bitcoin",
+ "bitcoin_hashes 0.14.101",
+ "clap",
+ "secp256k1 0.29.1",
+ "serde",
+ "sonic-rs",
+ "tempfile",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
 name = "bitcoin-rs-node"
 version = "0.15.0"
 dependencies = [

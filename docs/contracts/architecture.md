@@ -12,7 +12,7 @@ Owners:
 
 | Layer | Crates | Responsibility |
 | --- | --- | --- |
-| 4: Compose | `node`, `bitcoin-rs`, `e2e`, `storage-footprint`, `snapshot` | Runtime assembly, lifecycle, and offline tooling |
+| 4: Compose | `node`, `bitcoin-rs`, `e2e`, `storage-footprint`, `snapshot`, `nested-musig2` | Runtime assembly, lifecycle, and offline tooling |
 | 3: Surface | `rpc` | External protocol boundaries |
 | 2: Services | `chain`, `chainstate`, `utxo`, `p2p`, `mempool`, `index`, `mining` | Domain state and services |
 | 1: Storage | `storage` | Storage contracts and engine drivers |
@@ -30,6 +30,7 @@ Crate names use the `bitcoin-rs-` prefix except for the `bitcoin-rs` binary.
 - `p2p` depends on `mempool` for the transaction inventory view and the committed-mutation relay consumer. `mempool` MUST NOT depend on `p2p`, `rpc`, `node`, or the binary. Admission retains peer attribution as data, never connection ownership. The gate checks this boundary. `p2p` consumes chainstate-owned historical progress, window-failure dispositions, and reorg outcomes without enabling backend features. The node retains transition settlement and follower dispatch. P2P consumes outcomes for scheduling, retry, and peer policy through `SyncChain`. `p2p` consumes optional compact-filter queries from `index` through `CompactFilterQuery`. Index owns generation, persistence, and readiness. P2P contains no second index runtime and no storage backend features.
 - In Layer 4, the footprint package is an offline Linux filesystem utility with no node, runtime-workspace, or storage-engine dependencies. `bitcoin-rs-snapshot` is an offline Core-file inspector and verifier on the shared primitives and UTXO codec. It composes no node, P2P, RPC, mempool, or mining runtime. `bitcoin-rs-e2e` drives the composed daemon and the pinned reference node over public surfaces only. It declares no internal dependencies. No workspace crate may depend on it.
 - Explicit non-goal: layer numbers do not justify speculative new crates or thin wrapper layers. A boundary exists only to isolate external dependencies, enforce safety or consensus boundaries, or separate independent runtime lifecycles.
+- `bitcoin-rs-nested-musig2` owns an experimental signing tool with its own process and key lifecycle. Its separate package keeps signing keys and nonce state outside the node. It has no dependencies on runtime workspace crates. The node does not depend on the tool. Regtest evidence crosses the public RPC boundary and uses the existing Taproot validation path.
 
 ### `ARCH-02`: Exclusive storage engine dependency ownership
 

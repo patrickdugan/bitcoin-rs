@@ -21,6 +21,7 @@ members = [
     "tools/snapshot",
     "tools/contract-index",
     "tools/p2pk-scan",
+    "tools/nested-musig2",
 ]
 
 [workspace.package]
