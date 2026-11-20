@@ -313,7 +313,13 @@ class ModelEvidenceTests(unittest.TestCase):
         self.write_tool(body)
         record = self.run_check(timeout=1)
         self.assertEqual(record["evidence_rc"], 14)
-        pid_file = next(self.root.glob("target/apalache/**/descendant.pid"))
+        initial_results = [
+            path for path in self.root.glob("target/apalache/**/result.json")
+            if json.loads(path.read_text())["k"] == 128
+        ]
+        self.assertEqual(len(initial_results), 1)
+        result = initial_results[0]
+        pid_file = result.parent / "descendant.pid"
         descendant = int(pid_file.read_text())
         try:
             stat = Path(f"/proc/{descendant}/stat").read_text(encoding="ascii")
@@ -322,7 +328,6 @@ class ModelEvidenceTests(unittest.TestCase):
         if stat is not None:
             state = stat[stat.rfind(")") + 1:].split(maxsplit=1)[0]
             self.assertEqual(state, "Z")
-        result = next(self.root.glob("target/apalache/**/result.json"))
         self.assertEqual(json.loads(result.read_text()),
                          {"k": 128, "native_rc": None, "evidence_rc": 14})
 
