@@ -18,6 +18,8 @@ def main():
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text())
         submits = [p for p in receipt["plays"] if p["step"] == "submit"]
+        probe = receipt.get("csv_probe", {})
+        notice("ark csv probe", f"height {probe.get('height')}: deployment {probe.get('deployment')}; bitcoin-rs block {probe.get('bitcoin_rs_block')}; Core submitblock {probe.get('core_submitblock')}")
         notice("ark regtest", f"{receipt['status']}: {len(receipt['plays'])} plays, {len(submits)} submissions, "
                               f"{len(receipt['failures'])} unexpected, {len(receipt['stage_mismatches'])} stage mismatches, "
                               f"{len(receipt['utxo_state']['differences'])} UTXO differences, height {receipt['final_height']}")
@@ -27,6 +29,8 @@ def main():
             if play["step"] == "package":
                 notice("ark package", " ".join(f"{name}: parent-alone {v['parent_alone']['allowed']} package {v['package_accepted']}"
                                                for name, v in play["nodes"].items()))
+                script = play.get("bitcoin_rs_script", {}).get("child", {})
+                notice("ark package", f"P2A child in bitcoin-rs-script: mandatory {script.get('mandatory_flags')}; standard {script.get('standard_flags')}")
             if play["step"] == "reorg":
                 notice("ark reorg", " ".join(f"{name}: returned {len(v['returned_to_mempool'])} dropped {len(v['dropped'])}"
                                              for name, v in play["nodes"].items()))

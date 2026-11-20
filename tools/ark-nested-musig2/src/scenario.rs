@@ -35,7 +35,6 @@ pub const FUNDING_SCHEMA: &str = "ark-nm2-funding-v1";
 pub const P2A_SCRIPT: [u8; 4] = [0x51, 0x02, 0x4e, 0x73];
 pub const BOARDING_BASE_SAT: u64 = 200_000;
 pub const LIQUIDITY_SAT: u64 = 5_000_000;
-pub const ANCHOR_TEST_SAT: u64 = 100_000;
 
 pub fn key_file(dir: &Path, role: SignerId) -> PathBuf {
     match role {
@@ -48,8 +47,8 @@ pub fn faucet_file(dir: &Path) -> PathBuf {
     dir.join("faucet.key")
 }
 
-pub fn boarding_amount(user: u16) -> u64 {
-    BOARDING_BASE_SAT + 10_000 * u64::from(user)
+pub fn boarding_amount(base: u64, user: u16) -> u64 {
+    base + 1_000 * u64::from(user)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -102,6 +101,8 @@ pub fn fund(
     coinbase: OutPoint,
     coinbase_sat: u64,
     params: &Params,
+    boarding_base: u64,
+    liquidity_sat: u64,
 ) -> Result<FundingRecord> {
     let faucet = Participant::load(&faucet_file(dir), network)?;
     let asp = Participant::load(&key_file(dir, SignerId::Asp), network)?;
@@ -116,23 +117,28 @@ pub fn fund(
             exit_delay: params.boarding_delay,
         }
         .script_pubkey()?;
-        records.push(("boarding", user, boarding_amount(user), script.clone()));
-        outputs.push(output(boarding_amount(user), script));
+        records.push((
+            "boarding",
+            user,
+            boarding_amount(boarding_base, user),
+            script.clone(),
+        ));
+        outputs.push(output(boarding_amount(boarding_base, user), script));
     }
     for round in 0..rounds {
         let script = key_path_script(asp_xonly);
-        records.push(("liquidity", round, LIQUIDITY_SAT, script.clone()));
-        outputs.push(output(LIQUIDITY_SAT, script));
+        records.push(("liquidity", round, liquidity_sat, script.clone()));
+        outputs.push(output(liquidity_sat, script));
     }
     let faucet_script = key_path_script(faucet.xonly()?);
     for (index, role) in ["anchor-parent", "anchor-child"].into_iter().enumerate() {
         records.push((
             role,
             to_u16(index, "anchor")?,
-            ANCHOR_TEST_SAT,
+            boarding_base,
             faucet_script.clone(),
         ));
-        outputs.push(output(ANCHOR_TEST_SAT, faucet_script.clone()));
+        outputs.push(output(boarding_base, faucet_script.clone()));
     }
     outputs.push(output(0, faucet_script.clone()));
     let fee = fee_for(key_spend_vsize(1, &outputs), params.fee_rate_sat_per_kvb)?;
@@ -466,6 +472,15 @@ fn record_statement(
 pub fn run_scenario(input: &ScenarioInput<'_>, out: &Path) -> Result<ScenarioOutput> {
     let params = Params::regtest(Shape::Nested);
     let network = input.network;
+    let boarding_amount = |user: u16| -> u64 {
+        input
+            .funding
+            .find("boarding", user)
+            .map(|(_, record)| record.amount_sat)
+            .unwrap_or(0)
+    };
+    let liquidity_sat = input.funding.find("liquidity", 0)?.1.amount_sat;
+    let anchor_sat = input.funding.find("anchor-parent", 0)?.1.amount_sat;
     let asp_key = Participant::load(&key_file(input.dir, SignerId::Asp), network)?;
     let asp = asp_key.plain()?;
     let faucet = Participant::load(&faucet_file(input.dir), network)?;
@@ -608,16 +623,16 @@ pub fn run_scenario(input: &ScenarioInput<'_>, out: &Path) -> Result<ScenarioOut
     let r0_fee = graph.txs.last().and_then(|tx| tx.fee_sat).unwrap_or(0);
     let low = key_spend(
         &asp_key,
-        &[(liq0, LIQUIDITY_SAT)],
-        vec![output(LIQUIDITY_SAT - 300, asp_script.clone())],
+        &[(liq0, liquidity_sat)],
+        vec![output(liquidity_sat - 300, asp_script.clone())],
         Sequence::ENABLE_RBF_NO_LOCKTIME,
         Version::TWO,
     )?;
     graph.add("asp-replace-low", "replacement", &low, &["asp"], None)?;
     let high = key_spend(
         &asp_key,
-        &[(liq0, LIQUIDITY_SAT)],
-        vec![output(LIQUIDITY_SAT - r0_fee - 10_000, asp_script.clone())],
+        &[(liq0, liquidity_sat)],
+        vec![output(liquidity_sat - r0_fee - 10_000, asp_script.clone())],
         Sequence::ENABLE_RBF_NO_LOCKTIME,
         Version::TWO,
     )?;
@@ -896,17 +911,17 @@ pub fn run_scenario(input: &ScenarioInput<'_>, out: &Path) -> Result<ScenarioOut
     let faucet_script = key_path_script(faucet.xonly()?);
     let zero_v2 = key_spend(
         &faucet,
-        &[(parent_in, ANCHOR_TEST_SAT)],
-        vec![output(ANCHOR_TEST_SAT, faucet_script.clone())],
+        &[(parent_in, anchor_sat)],
+        vec![output(anchor_sat, faucet_script.clone())],
         Sequence::MAX,
         Version::TWO,
     )?;
     graph.add("zero-fee-v2", "fee-floor", &zero_v2, &["faucet"], None)?;
     let parent = key_spend(
         &faucet,
-        &[(parent_in, ANCHOR_TEST_SAT)],
+        &[(parent_in, anchor_sat)],
         vec![
-            output(ANCHOR_TEST_SAT, faucet_script.clone()),
+            output(anchor_sat, faucet_script.clone()),
             output(0, ScriptBuf::from_bytes(P2A_SCRIPT.to_vec())),
         ],
         Sequence::MAX,
@@ -919,7 +934,7 @@ pub fn run_scenario(input: &ScenarioInput<'_>, out: &Path) -> Result<ScenarioOut
         &["faucet"],
         None,
     )?;
-    let child = anchor_child(&faucet, &parent, child_in, rate)?;
+    let child = anchor_child(&faucet, &parent, child_in, anchor_sat, rate)?;
     graph.add(
         "arkade-style-v3-child",
         "anchor-package",
@@ -1184,6 +1199,7 @@ fn anchor_child(
     faucet: &Participant,
     parent: &Transaction,
     fee_input: OutPoint,
+    amount: u64,
     rate: u64,
 ) -> Result<Transaction> {
     let script = key_path_script(faucet.xonly()?);
@@ -1198,10 +1214,10 @@ fn anchor_child(
     tx.version = Version(3);
     let vsize = crate::round::vsize_with(&tx, &[Vec::new(), crate::round::key_path_witness()]);
     let fee = fee_for(vsize + parent.vsize(), rate.saturating_mul(2))?;
-    tx.output[0].value = Amount::from_sat(sub_sat(ANCHOR_TEST_SAT, fee, "anchor child")?);
+    tx.output[0].value = Amount::from_sat(sub_sat(amount, fee, "anchor child")?);
     let prevouts = vec![
         output(0, ScriptBuf::from_bytes(P2A_SCRIPT.to_vec())),
-        output(ANCHOR_TEST_SAT, script),
+        output(amount, script),
     ];
     let digest = crate::signing::sighash(&crate::signing::SpendTarget {
         tx: tx.clone(),

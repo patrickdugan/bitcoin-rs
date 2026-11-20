@@ -6,11 +6,12 @@ use bitcoin::OutPoint;
 use bitcoin::hex::DisplayHex as _;
 use bitcoin_rs_ark_nested_musig2::keys::{KeyNetwork, Participant};
 use bitcoin_rs_ark_nested_musig2::policy::{Shape, SignerId};
-use bitcoin_rs_ark_nested_musig2::round::Params;
+use bitcoin_rs_ark_nested_musig2::round::{Params, exit_tx, key_spend, output};
 use bitcoin_rs_ark_nested_musig2::scenario::{
-    FundingRecord, ObservedRecord, ScenarioInput, bench, faucet_file, fund, key_file, run_scenario,
+    BOARDING_BASE_SAT, FundingRecord, LIQUIDITY_SAT, ObservedRecord, ScenarioInput, bench,
+    faucet_file, fund, key_file, run_scenario,
 };
-use bitcoin_rs_ark_nested_musig2::scripts::{VtxoScript, key_path_address};
+use bitcoin_rs_ark_nested_musig2::scripts::{VtxoScript, key_path_address, key_path_script};
 use bitcoin_rs_ark_nested_musig2::statement::{
     ArkTransitionV1, ProofEnvelope, check_statement, nova_witness, verify_proof_envelope,
 };
@@ -63,6 +64,10 @@ enum Command {
         coinbase: String,
         #[arg(long)]
         coinbase_sat: u64,
+        #[arg(long, default_value_t = BOARDING_BASE_SAT)]
+        boarding_sat: u64,
+        #[arg(long, default_value_t = LIQUIDITY_SAT)]
+        liquidity_sat: u64,
     },
     Scenario {
         #[arg(long)]
@@ -128,6 +133,45 @@ enum Command {
         #[arg(long)]
         exit_blocks: u16,
     },
+    NativeVerify {
+        #[arg(long)]
+        tx: String,
+        #[arg(
+            long = "prevout",
+            help = "VALUE_SAT:SCRIPT_HEX, one per input in order"
+        )]
+        prevouts: Vec<String>,
+    },
+    CsvProbe {
+        #[arg(long)]
+        dir: PathBuf,
+        #[arg(long, value_enum)]
+        network: NetworkArg,
+        #[arg(long)]
+        coinbase: String,
+        #[arg(long)]
+        coinbase_sat: u64,
+        #[arg(long, default_value_t = 12)]
+        delay: u16,
+    },
+}
+
+#[derive(Serialize)]
+struct NativeVerifyOutput {
+    schema: &'static str,
+    txid: String,
+    mandatory_flags: String,
+    standard_flags: String,
+}
+
+#[derive(Serialize)]
+struct CsvProbeOutput {
+    schema: &'static str,
+    delay: u16,
+    funding_txid: String,
+    funding_hex: String,
+    spend_txid: String,
+    spend_hex: String,
 }
 
 #[derive(Serialize)]
@@ -187,6 +231,8 @@ fn run() -> Result<String, Error> {
             rounds,
             coinbase,
             coinbase_sat,
+            boarding_sat,
+            liquidity_sat,
         } => {
             let outpoint = OutPoint::from_str(&coinbase)
                 .map_err(|_| Error::Construction("coinbase must be txid:vout".to_owned()))?;
@@ -198,6 +244,8 @@ fn run() -> Result<String, Error> {
                 outpoint,
                 coinbase_sat,
                 &Params::regtest(Shape::Nested),
+                boarding_sat,
+                liquidity_sat,
             )?)
         }
         Command::Scenario {
@@ -278,6 +326,84 @@ fn run() -> Result<String, Error> {
                     verifier: &verifier,
                 },
             )?)
+        }
+        Command::NativeVerify { tx, prevouts } => {
+            let tx: bitcoin::Transaction = bitcoin::consensus::encode::deserialize_hex(&tx)
+                .map_err(|_| Error::Construction("transaction hex".to_owned()))?;
+            let prevouts = prevouts
+                .iter()
+                .map(|entry| {
+                    let (value, script) = entry.split_once(':').ok_or_else(|| {
+                        Error::Construction("prevout must be VALUE:SCRIPT".to_owned())
+                    })?;
+                    Ok(output(
+                        value
+                            .parse()
+                            .map_err(|_| Error::Construction("prevout value".to_owned()))?,
+                        bitcoin_rs_ark_nested_musig2::scenario::script_hex(script)?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, Error>>()?;
+            let verdict = |standard| match bitcoin_rs_ark_nested_musig2::native::verify_with_flags(
+                &tx, &prevouts, standard,
+            ) {
+                Ok(inputs) => format!("accepted {inputs} inputs"),
+                Err(error) => error.to_string(),
+            };
+            json(&NativeVerifyOutput {
+                schema: "ark-nm2-native-verify-v1",
+                txid: tx.compute_txid().to_string(),
+                mandatory_flags: verdict(false),
+                standard_flags: verdict(true),
+            })
+        }
+        Command::CsvProbe {
+            dir,
+            network,
+            coinbase,
+            coinbase_sat,
+            delay,
+        } => {
+            let network = network.key();
+            let faucet = Participant::load(&faucet_file(&dir), network)?;
+            let asp = Participant::load(&key_file(&dir, SignerId::Asp), network)?;
+            let outpoint = OutPoint::from_str(&coinbase)
+                .map_err(|_| Error::Construction("coinbase must be txid:vout".to_owned()))?;
+            let script = VtxoScript {
+                owner: faucet.xonly()?,
+                asp: asp.xonly()?,
+                exit_delay: delay,
+            };
+            let amount = 1_000_000;
+            let change = coinbase_sat
+                .checked_sub(amount + 2_000)
+                .ok_or(Error::Value("probe change"))?;
+            let funding = key_spend(
+                &faucet,
+                &[(outpoint, coinbase_sat)],
+                vec![
+                    output(amount, script.script_pubkey()?),
+                    output(change, key_path_script(faucet.xonly()?)),
+                ],
+                bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
+                bitcoin::transaction::Version::TWO,
+            )?;
+            let spend = exit_tx(
+                &script,
+                OutPoint::new(funding.compute_txid(), 0),
+                amount,
+                key_path_script(faucet.xonly()?),
+                2_000,
+                &faucet,
+            )?;
+            json(&CsvProbeOutput {
+                schema: "ark-nm2-csv-probe-v1",
+                delay,
+                funding_txid: funding.compute_txid().to_string(),
+                funding_hex: bitcoin::consensus::encode::serialize_hex(&funding),
+                spend_txid: spend.compute_txid().to_string(),
+                spend_hex: bitcoin::consensus::encode::serialize_hex(&spend),
+            })
         }
         Command::VtxoScript {
             server,

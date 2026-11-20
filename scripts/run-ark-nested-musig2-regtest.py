@@ -124,9 +124,23 @@ def play_submit(nodes, play, txs):
     return record
 
 
-def play_package(nodes, play, txs):
+def native_flags(ark, nodes, tx_hex, known):
+    """Runs one transaction through bitcoin-rs-script under mandatory and standard flags."""
+    prevouts = []
+    for vin in nodes.core.call("decoderawtransaction", tx_hex)["vin"]:
+        value, script = known[(vin["txid"], vin["vout"])]
+        prevouts += ["--prevout", f"{value}:{script}"]
+    return run_json(ark, "native-verify", "--tx", tx_hex, *prevouts)
+
+
+def play_package(nodes, play, txs, ark, funding):
     parent, child = txs[play["parent"]], txs[play["child"]]
     record = {"step": "package", "parent": play["parent"], "child": play["child"], "note": play["note"], "nodes": {}}
+    known = {(funding["txid"], o["vout"]): (o["amount_sat"], o["script_pubkey"]) for o in funding["outputs"]}
+    for output in nodes.core.call("decoderawtransaction", parent["hex"])["vout"]:
+        known[(parent["txid"], output["n"])] = (btc_to_sat(output["value"]), output["scriptPubKey"]["hex"])
+    record["bitcoin_rs_script"] = {"parent": native_flags(ark, nodes, parent["hex"], known),
+                                   "child": native_flags(ark, nodes, child["hex"], known)}
     for name, rpc in nodes.both:
         alone = node_verdict(rpc, parent["hex"])
         try:
@@ -188,6 +202,47 @@ def play_age(nodes, play, txs):
             "height": nodes.height(), "note": play["note"]}
 
 
+def deployment(rpc):
+    try:
+        info = rpc.call("getdeploymentinfo")
+        csv = info.get("deployments", {}).get("csv", {})
+        return {"csv_height": csv.get("height"), "csv_active": csv.get("active")}
+    except RpcError as error:
+        return {"error": str(error)}
+
+
+def csv_probe(nodes, ark, keys, coinbase, coinbase_sat):
+    """Spends a 12-block CSV output one block after it confirms, below height 432.
+
+    Records each node's mempool verdict, then whether bitcoin-rs mines and
+    accepts a block with the spend and whether Core accepts that block. The
+    probe block is invalidated afterwards so both nodes share one tip again.
+    """
+    probe = run_json(ark, "csv-probe", "--dir", keys, "--network", "regtest",
+                     "--coinbase", coinbase, "--coinbase-sat", coinbase_sat)
+    for name, rpc in nodes.both:
+        rpc.call("sendrawtransaction", probe["funding_hex"])
+    nodes.mine([probe["funding_txid"]])
+    record = {"height": nodes.height(), "deployment": {name: deployment(rpc) for name, rpc in nodes.both},
+              "mempool": {name: node_verdict(rpc, probe["spend_hex"]) for name, rpc in nodes.both}}
+    if record["mempool"]["bitcoin-rs"]["allowed"]:
+        nodes.rs.call("sendrawtransaction", probe["spend_hex"])
+        try:
+            block = nodes.rs.call("generateblock", nodes.mine_address, [probe["spend_txid"]])["hash"]
+            record["bitcoin_rs_block"] = {"hash": block, "accepted_by_bitcoin_rs": nodes.rs.call("getbestblockhash") == block}
+            core_result = nodes.core.call("submitblock", nodes.rs.call("getblock", block, 0))
+            record["core_submitblock"] = core_result if core_result is not None else "accepted"
+            if core_result is not None:
+                nodes.rs.call("invalidateblock", block)
+        except RpcError as error:
+            record["bitcoin_rs_block"] = {"error": str(error)}
+    tips = {name: rpc.call("getbestblockhash") for name, rpc in nodes.both}
+    record["reconverged"] = len(set(tips.values())) == 1
+    if not record["reconverged"]:
+        raise StagingError(f"nodes did not reconverge after the CSV probe: {tips}")
+    return record
+
+
 def compare_utxos(nodes, txs, funding):
     differences, checked = [], 0
     outpoints = [(funding["txid"], output["vout"]) for output in funding["outputs"]]
@@ -213,6 +268,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--remote-users", default="2,3")
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument("--start-height", type=int, default=440,
+                        help="height reached before the lifecycle; bitcoin-rs activates regtest CSV at 432")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     ark = args.ark.resolve(strict=True)
@@ -264,10 +321,21 @@ def main():
             result = reference.call("submitblock", rs.call("getblock", block, 0))
             if result is not None:
                 raise StagingError(f"Core rejected a native funding block: {result}")
-        coinbase = reference.call("getblock", blocks[0], 2)["tx"][0]
-        paid = [o for o in coinbase["vout"] if o["scriptPubKey"].get("address") == init["faucet_address"]]
-        if len(paid) != 1:
-            raise StagingError("faucet coinbase output not found")
+        def faucet_coinbase(block):
+            coinbase = reference.call("getblock", block, 2)["tx"][0]
+            paid = [o for o in coinbase["vout"] if o["scriptPubKey"].get("address") == init["faucet_address"]]
+            if len(paid) != 1:
+                raise StagingError("faucet coinbase output not found")
+            return coinbase, paid
+
+        probe_coinbase, probe_paid = faucet_coinbase(blocks[1])
+        probe = csv_probe(nodes, ark, keys, f"{probe_coinbase['txid']}:{probe_paid[0]['n']}",
+                          btc_to_sat(probe_paid[0]["value"]))
+        write_json(args.output / "csv-probe.json", probe)
+        print(f"CSV probe at height {probe['height']}: {json.dumps(probe['mempool'])[:300]}", flush=True)
+        while nodes.height() < args.start_height:
+            nodes.mine([])
+        coinbase, paid = faucet_coinbase(blocks[0])
         funding = run_json(ark, "fund", "--dir", keys, "--network", "regtest", "--users", 5, "--rounds", 3,
                            "--coinbase", f"{coinbase['txid']}:{paid[0]['n']}",
                            "--coinbase-sat", btc_to_sat(paid[0]["value"]))
@@ -306,7 +374,7 @@ def main():
             if kind == "submit":
                 results.append(play_submit(nodes, play, txs))
             elif kind == "package":
-                results.append(play_package(nodes, play, txs))
+                results.append(play_package(nodes, play, txs, ark, funding))
             elif kind == "mine":
                 txids = [txs[identifier]["txid"] for identifier in play["include"]]
                 results.append({"step": "mine", "include": play["include"], "block": nodes.mine(txids),
@@ -342,6 +410,8 @@ def main():
             "network": "regtest",
             "funding_txid": funding["txid"],
             "funding_block": funding_block,
+            "csv_probe": probe,
+            "deployment_at_lifecycle": {name: deployment(rpc) for name, rpc in nodes.both},
             "scenario_summary": summary,
             "signing_wall_seconds": round(signing_seconds, 3),
             "total_wall_seconds": round(time.monotonic() - started, 3),

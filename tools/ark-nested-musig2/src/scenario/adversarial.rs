@@ -23,7 +23,7 @@ pub struct AdversarialCase {
     pub category: &'static str,
     pub expected_stage: &'static str,
     pub observed_stage: String,
-    pub rejected: bool,
+    pub as_expected: bool,
     pub executed_against: Vec<&'static str>,
     pub detail: String,
 }
@@ -50,7 +50,7 @@ fn case<T>(
         name,
         category,
         expected_stage: expected,
-        rejected: observed_stage == expected,
+        as_expected: observed_stage == expected,
         observed_stage,
         executed_against: against.to_vec(),
         detail: detail.into(),
@@ -79,7 +79,7 @@ fn rule_case(
         name,
         category,
         expected_stage: expected,
-        rejected: observed_stage == expected,
+        as_expected: observed_stage == expected,
         observed_stage,
         executed_against: vec!["own-ark-fixture", "native-statement-checker"],
         detail: detail.into(),
@@ -266,7 +266,7 @@ pub(super) fn signer_faults(
         category: "nonce",
         expected_stage: "accepted",
         observed_stage: stage_of(&result),
-        rejected: restarted_ok,
+        as_expected: restarted_ok,
         executed_against: vec!["own-ark-fixture", "process-signers"],
         detail: "a new attempt with fresh nonces from the restarted process completes and verifies"
             .to_owned(),
@@ -358,7 +358,7 @@ pub(super) fn statement_cases(
             Ok(_) => "accepted".to_owned(),
             Err(error) => error.to_string(),
         },
-        rejected: theft.is_ok(),
+        as_expected: theft.is_ok(),
         executed_against: vec!["own-ark-fixture", "bitcoin-rs-script"],
         detail: "with the unchecked statement the operator alone can spend the batch output; a non-validating client would have authorized this".to_owned(),
     });
@@ -467,7 +467,7 @@ pub(super) fn statement_cases(
         } else {
             format!("nested changed {} flat changed {}", nested_a != nested_b, flat_a != flat_b)
         },
-        rejected: nested_a != nested_b && flat_a == flat_b,
+        as_expected: nested_a != nested_b && flat_a == flat_b,
         executed_against: vec!["own-ark-fixture"],
         detail: "swapping B and C across subgroups changes the nested aggregate key and statement; the flat BIP327 key is order invariant".to_owned(),
     });
@@ -534,7 +534,7 @@ pub(super) fn round2_cases(
             Ok(_) => "accepted".to_owned(),
             Err(_) => "script-verification".to_owned(),
         },
-        rejected: result.is_err(),
+        as_expected: result.is_err(),
         executed_against: vec!["own-ark-fixture", "bitcoin-rs-script"],
         detail: "the signed commitment's sighash covers every output; the node plays repeat this on bitcoin-rs and Core".to_owned(),
     });
@@ -556,7 +556,7 @@ pub(super) fn round2_cases(
     cases.push(rule_case(
         "duplicate-vtxo-forfeit",
         "double-spend",
-        "forfeit-binding",
+        "single-use-spends",
         &duplicate,
         "the same old VTXO is forfeited against two connectors",
     )?);

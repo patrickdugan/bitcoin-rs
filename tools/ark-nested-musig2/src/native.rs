@@ -19,6 +19,21 @@ pub enum NativeError {
 /// Executes every input under the bitcoin-rs interpreter with standard flags,
 /// which include the mandatory consensus flags.
 pub fn verify_all_inputs(tx: &Transaction, prevouts: &[TxOut]) -> Result<usize, NativeError> {
+    verify_with_flags(tx, prevouts, true)
+}
+
+/// `standard` selects bitcoin-rs's standard flags; otherwise only the
+/// mandatory consensus flags apply.
+pub fn verify_with_flags(
+    tx: &Transaction,
+    prevouts: &[TxOut],
+    standard: bool,
+) -> Result<usize, NativeError> {
+    let flags = if standard {
+        VerifyFlags::STANDARD
+    } else {
+        VerifyFlags::MANDATORY
+    };
     if tx.input.len() != prevouts.len() {
         return Err(NativeError::Prevouts {
             inputs: tx.input.len(),
@@ -44,7 +59,7 @@ pub fn verify_all_inputs(tx: &Transaction, prevouts: &[TxOut]) -> Result<usize, 
     let prepared = PreparedTransaction::new(&native, &rows)
         .map_err(|error| NativeError::Decode(format!("{error:?}")))?;
     for input in 0..native.inputs.len() {
-        match prepared.verify_input(input, VerifyFlags::STANDARD, None) {
+        match prepared.verify_input(input, flags, None) {
             Ok(true) => {}
             Ok(false) => {
                 return Err(NativeError::Script {
