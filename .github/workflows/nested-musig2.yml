@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: nested-musig2-${{ github.event.pull_request.number || github.ref }}
+  group: nested-musig2-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -87,8 +87,10 @@ jobs:
           cargo build --locked --profile quickstart -p bitcoin-rs-nested-musig2 2>&1 | tee target/nested-musig2-build/signer.log
           git rev-parse HEAD > target/nested-musig2-build/source-sha.txt
           sha256sum target/quickstart/bitcoin-rs target/quickstart/nested-musig2 > target/nested-musig2-build/binaries.sha256
-      - name: Verify dependency ownership
-        run: cargo test --locked -p bitcoin-rs --no-default-features --features fjall --test suite g17_dependency_direction::workspace_dependency_direction_is_one_way -- --exact
+      - name: Verify dependency ownership and locktime behavior
+        run: |
+          cargo test --locked -p bitcoin-rs --no-default-features --features fjall --test suite g17_dependency_direction::workspace_dependency_direction_is_one_way -- --exact
+          cargo test --locked -p bitcoin-rs-script --no-default-features --lib checker::tests::check_locktime_follows_bip65 -- --exact
       - name: Install the pinned Core reference
         run: bash scripts/install-bitcoind.sh --print-path
       - name: Fund, sign, reject mutations, admit, and confirm
