@@ -12,7 +12,18 @@ on:
       - 'Cargo.lock'
       - 'bin/bitcoin-rs/tests/support/dependency_graph.rs'
   push:
-    branches: ['feat/nested-musig2-regtest']
+    branches: ['dev', 'feat/nested-musig2-regtest']
+    paths:
+      - '.github/workflows/nested-musig2.yml'
+      - 'tools/nested-musig2/**'
+      - 'scripts/run-nested-musig2-*.py'
+      - 'scripts/nested_musig2_staging.py'
+      - 'scripts/tests/test_nested_musig2_staging.py'
+      - 'scripts/install-bitcoind.sh'
+      - '.cargo/config.toml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'bin/bitcoin-rs/tests/support/dependency_graph.rs'
   workflow_dispatch:
 
 permissions:
