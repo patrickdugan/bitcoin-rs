@@ -27,6 +27,7 @@ pub(crate) struct TxSignatureChecker<'a> {
     cache: &'a SighashCache<'a>,
     sig_cache: Option<&'a SignatureCache>,
     annex: Option<Vec<u8>>,
+    internal_key: Option<[u8; 32]>,
 }
 
 impl<'a> TxSignatureChecker<'a> {
@@ -47,11 +48,46 @@ impl<'a> TxSignatureChecker<'a> {
             cache,
             sig_cache,
             annex: None,
+            internal_key: None,
         }
     }
 
     pub(crate) fn set_annex(&mut self, annex: Option<Vec<u8>>) {
         self.annex = annex;
+    }
+
+    pub(crate) fn set_internal_key(&mut self, key: Option<[u8; 32]>) {
+        self.internal_key = key;
+    }
+
+    pub(crate) fn internal_key(&self) -> Option<[u8; 32]> {
+        self.internal_key
+    }
+
+    /// BIP 446 template hash of the transaction for the input being verified.
+    pub(crate) fn template_hash(&self) -> Result<[u8; 32], ScriptError> {
+        self.cache
+            .template_hash(self.input_index, self.annex.as_deref())
+            .map(|hash| hash.to_le_bytes())
+            .map_err(|e| ScriptError::Verification(e.to_string()))
+    }
+
+    /// BIP 348 check: a 64-byte BIP 340 signature over the raw message bytes.
+    pub(crate) fn check_schnorr_message(
+        &self,
+        sig: &[u8],
+        pubkey: &[u8],
+        message: &[u8],
+    ) -> Result<bool, ScriptError> {
+        let Ok(sig) = <[u8; 64]>::try_from(sig) else {
+            return Err(ScriptError::Invalid {
+                code: ScriptErrCode::SchnorrSigSize,
+            });
+        };
+        let Ok(pubkey) = <[u8; 32]>::try_from(pubkey) else {
+            return Ok(false);
+        };
+        Ok(crate::bip448::verify_bip340(&sig, message, &pubkey))
     }
 
     pub(crate) fn check_ecdsa_signature(

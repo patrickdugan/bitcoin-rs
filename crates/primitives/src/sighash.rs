@@ -375,6 +375,39 @@ impl<'t> SighashCache<'t> {
         Ok(tagged_hash(b"TapSighash", &msg))
     }
 
+    /// Computes the BIP 446 `OP_TEMPLATEHASH` of the transaction as seen from
+    /// `input_index`, with the BIP341 `sha_sequences`, `sha_outputs` and
+    /// `sha_annex` fields. The returned hash holds the tagged-hash bytes in
+    /// the order the opcode pushes them (`to_le_bytes`).
+    pub fn template_hash(
+        &self,
+        input_index: usize,
+        annex: Option<&[u8]>,
+    ) -> Result<Hash256, SighashError> {
+        let annex = annex.map(validate_annex).transpose()?;
+        let total = self.tx.inputs.len();
+        if input_index >= total {
+            return Err(SighashError::InputOutOfRange {
+                index: input_index,
+                total,
+            });
+        }
+        let mut msg = Vec::with_capacity(109);
+        msg.extend_from_slice(&self.tx.version.to_le_bytes());
+        msg.extend_from_slice(&self.tx.lock_time.to_le_bytes());
+        msg.extend_from_slice(&self.sequences().to_le_bytes());
+        msg.extend_from_slice(&self.outputs().to_le_bytes());
+        msg.push(u8::from(annex.is_some()));
+        let index =
+            u32::try_from(input_index).unwrap_or_else(|_| unreachable!("input index fits u32"));
+        msg.extend_from_slice(&index.to_le_bytes());
+        if let Some(annex) = annex {
+            let annex_len = varint::encode(compact_len(annex.len()));
+            msg.extend_from_slice(&sha256_parts(&[annex_len.as_slice(), annex]));
+        }
+        Ok(tagged_hash(b"TemplateHash", &msg))
+    }
+
     fn prevouts(&self) -> Hash256 {
         let tx = self.tx;
         *self.prevouts.get_or_init(|| {
