@@ -54,22 +54,26 @@ fn main() -> ExitCode {
     }
     let import = (cli.corpus.clone(), cli.manifest.clone(), cli.state.clone());
     let bip448 = cli.bip448;
-    let result = config::resolve(cli, std::env::vars_os()).and_then(|config| {
-        if bip448 {
-            bitcoin_rs_consensus::bip448::activate_bip448(config.network)?;
-        }
-        Ok(config)
-    }).and_then(|config| match import {
-        (Some(corpus), Some(manifest), Some(state)) => {
-            bitcoin_rs_node::offline_import::run_offline_import(config, &corpus, &manifest, &state)
+    let result = config::resolve(cli, std::env::vars_os())
+        .and_then(|config| {
+            if bip448 {
+                bitcoin_rs_consensus::bip448::activate_bip448(config.network)?;
+            }
+            Ok(config)
+        })
+        .and_then(|config| match import {
+            (Some(corpus), Some(manifest), Some(state)) => {
+                bitcoin_rs_node::offline_import::run_offline_import(
+                    config, &corpus, &manifest, &state,
+                )
                 .map_err(BinError::from)
-        }
-        (None, None, None) => {
-            bitcoin_rs_node::run(config, bitcoin_rs_node::RuntimeInputs::default())
-                .map_err(BinError::from)
-        }
-        _ => Err(BinError::IncompleteOfflineImportArguments),
-    });
+            }
+            (None, None, None) => {
+                bitcoin_rs_node::run(config, bitcoin_rs_node::RuntimeInputs::default())
+                    .map_err(BinError::from)
+            }
+            _ => Err(BinError::IncompleteOfflineImportArguments),
+        });
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

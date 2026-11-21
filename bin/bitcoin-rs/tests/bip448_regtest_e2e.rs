@@ -18,7 +18,7 @@ use bitcoin::script::Builder;
 use bitcoin::secp256k1::XOnlyPublicKey;
 use bitcoin::taproot::{LeafVersion, TaprootBuilder, TaprootSpendInfo};
 use bitcoin::{
-    Amount, OutPoint, ScriptBuf, Sequence, Transaction, TxIn, TxOut, Witness, WPubkeyHash,
+    Amount, OutPoint, ScriptBuf, Sequence, Transaction, TxIn, TxOut, WPubkeyHash, Witness,
     absolute::LockTime, transaction::Version,
 };
 use bitcoin_rs_e2e::helpers::{
@@ -265,12 +265,7 @@ impl State {
 
     /// The update transaction for this state, with its pre-signed template.
     fn update_tx(&self, parties: &Parties, spends: OutPoint) -> (Transaction, Vec<u8>) {
-        let tx = spending_tx(
-            spends,
-            BASE + self.n,
-            0xffff_fffd,
-            vec![self.txout()],
-        );
+        let tx = spending_tx(spends, BASE + self.n, 0xffff_fffd, vec![self.txout()]);
         let sig = parties.sign(&template_hash(&tx, 0));
         (tx, sig)
     }
@@ -371,7 +366,11 @@ fn three_party_ln_symmetry_update_replaces_and_settles() -> Result<(), TestError
     let mut u2 = u2_template.clone();
     u2.input[0].previous_output = u1_out;
     let u2 = with_update_witness(&s1, u2, &sig2);
-    assert_eq!(preview(&mut node, &u2), (true, String::new()), "state 2 may replace state 1");
+    assert_eq!(
+        preview(&mut node, &u2),
+        (true, String::new()),
+        "state 2 may replace state 1"
+    );
 
     // State-3 update, signed once over its template hash, spends state 1.
     let mut u3 = u3_template.clone();
@@ -384,8 +383,14 @@ fn three_party_ln_symmetry_update_replaces_and_settles() -> Result<(), TestError
     let (allowed, why) = preview(&mut node, &tampered_template);
     assert!(!allowed, "tampered template accepted");
     eprintln!("tampered template rejected: {why}");
-    let mined = node.rpc("generateblock", &json!(["raw(51)", [tx_hex(&tampered_template)]]));
-    assert!(mined.is_err(), "consensus must refuse the tampered template: {mined:?}");
+    let mined = node.rpc(
+        "generateblock",
+        &json!(["raw(51)", [tx_hex(&tampered_template)]]),
+    );
+    assert!(
+        mined.is_err(),
+        "consensus must refuse the tampered template: {mined:?}"
+    );
     let mut bad_sig = sig3.clone();
     bad_sig[5] ^= 0x01;
     let tampered_sig = with_update_witness(&s1, u3_template.clone(), &bad_sig);
@@ -398,7 +403,10 @@ fn three_party_ln_symmetry_update_replaces_and_settles() -> Result<(), TestError
     let wrong_sig = with_update_witness(&s1, u3_template.clone(), &sig2);
     let mut wrong_sig = wrong_sig;
     wrong_sig.input[0].previous_output = u1_out;
-    assert!(!preview(&mut node, &wrong_sig).0, "signature for another template accepted");
+    assert!(
+        !preview(&mut node, &wrong_sig).0,
+        "signature for another template accepted"
+    );
 
     let u3_txid = broadcast_and_mine(&mut node, &u3);
     let u3_out = OutPoint::new(u3.compute_txid(), 0);
@@ -417,7 +425,10 @@ fn three_party_ln_symmetry_update_replaces_and_settles() -> Result<(), TestError
     let mut stale_settle = stale_settle;
     stale_settle.input[0].witness = s3.witness(&s3.settle_leaf, &[]);
     stale_settle.output = settlement_outputs(1, s1.value);
-    assert!(!preview(&mut node, &stale_settle).0, "stale settlement accepted");
+    assert!(
+        !preview(&mut node, &stale_settle).0,
+        "stale settlement accepted"
+    );
 
     // Settlement of state 3 waits for the relative delay, then pays 3 parties.
     let settle = s3.settle_tx(u3_out);
@@ -450,8 +461,16 @@ fn three_party_ln_symmetry_update_replaces_and_settles() -> Result<(), TestError
     // Everything broadcast was mined: the mempool is empty again.
     assert_eq!(node.rpc("getrawmempool", &json!([]))?, json!([]));
 
-    eprintln!("BIP448-VSIZE funding(p2pkh->p2tr)  vsize={} weight={}", funding.vsize(), funding.weight().to_wu());
-    for (name, tx) in [("update state 1 (spends funding)", &u1), ("update state 3 (spends state 1)", &u3), ("settlement state 3 (3 outputs, CSV)", &settle)] {
+    eprintln!(
+        "BIP448-VSIZE funding(p2pkh->p2tr)  vsize={} weight={}",
+        funding.vsize(),
+        funding.weight().to_wu()
+    );
+    for (name, tx) in [
+        ("update state 1 (spends funding)", &u1),
+        ("update state 3 (spends state 1)", &u3),
+        ("settlement state 3 (3 outputs, CSV)", &settle),
+    ] {
         eprintln!(
             "BIP448-VSIZE {name:<36} vsize={} weight={} witness_bytes={}",
             tx.vsize(),
@@ -496,7 +515,10 @@ fn without_the_switch_the_opcodes_stay_op_success() -> Result<(), TestError> {
     assert!(!allowed, "policy must discourage OP_SUCCESS");
     eprintln!("flag off, mempool: {why}");
     let mined = node.rpc("generateblock", &json!(["raw(51)", [tx_hex(&forged)]]));
-    assert!(mined.is_ok(), "consensus accepts the OP_SUCCESS spend: {mined:?}");
+    assert!(
+        mined.is_ok(),
+        "consensus accepts the OP_SUCCESS spend: {mined:?}"
+    );
 
     node.stop()?;
     Ok(())

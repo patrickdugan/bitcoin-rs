@@ -4,7 +4,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use secp256k1::{PublicKey, Scalar, SecretKey, XOnlyPublicKey, SECP256K1, Parity};
+use secp256k1::{Parity, PublicKey, SECP256K1, Scalar, SecretKey, XOnlyPublicKey};
 use sha2::{Digest, Sha256};
 
 /// `OP_INTERNALKEY` replaces `OP_SUCCESS203`.
@@ -122,7 +122,7 @@ pub(crate) fn verify_bip340(sig: &[u8; 64], msg: &[u8], pubkey: &[u8; 32]) -> bo
 mod tests {
     #![expect(clippy::expect_used, reason = "test assertions")]
 
-    use super::{reduce_mod_n, verify_bip340, CURVE_ORDER};
+    use super::{CURVE_ORDER, reduce_mod_n, verify_bip340};
 
     fn hex(s: &str) -> Vec<u8> {
         (0..s.len())
@@ -154,7 +154,10 @@ mod tests {
             let msg = hex(cols[4]);
             let sig = hex(cols[5]);
             let expected = cols[6] == "TRUE";
-            let result = match (<[u8; 32]>::try_from(pubkey.as_slice()), <[u8; 64]>::try_from(sig.as_slice())) {
+            let result = match (
+                <[u8; 32]>::try_from(pubkey.as_slice()),
+                <[u8; 64]>::try_from(sig.as_slice()),
+            ) {
                 (Ok(pk), Ok(sig)) => verify_bip340(&sig, &msg, &pk),
                 _ => false,
             };

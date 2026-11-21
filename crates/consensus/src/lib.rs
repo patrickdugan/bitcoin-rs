@@ -7,8 +7,8 @@ pub use bitcoin_rs_script::MAX_SCRIPT_SIZE;
 pub const MAX_TIMEWARP: u32 = 600;
 
 pub mod bip30;
-pub mod bip448;
 pub mod bip34;
+pub mod bip448;
 pub mod bip68;
 pub mod bip9;
 mod block_view;
