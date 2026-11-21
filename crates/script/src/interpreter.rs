@@ -40,6 +40,10 @@ impl VerifyFlags {
     pub const DISCOURAGE_UPGRADABLE_TAPROOT_VERSION: Self = Self(1 << 18);
     pub const DISCOURAGE_OP_SUCCESS: Self = Self(1 << 19);
     pub const DISCOURAGE_UPGRADABLE_PUBKEYTYPE: Self = Self(1 << 20);
+    /// BIP 448: `OP_INTERNALKEY`, `OP_CHECKSIGFROMSTACK` and `OP_TEMPLATEHASH` are
+    /// defined in tapscript instead of being `OP_SUCCESS`. Core calls this
+    /// `TEMPLATEHASH` in the BIP 446 vectors. Not part of `MANDATORY`/`STANDARD`.
+    pub const BIP448: Self = Self(1 << 21);
     pub const MANDATORY: Self = Self(
         Self::P2SH.0
             | Self::DERSIG.0
@@ -137,6 +141,7 @@ impl VerifyFlags {
                 }
                 "DISCOURAGE_OP_SUCCESS" => Self::DISCOURAGE_OP_SUCCESS,
                 "DISCOURAGE_UPGRADABLE_PUBKEYTYPE" => Self::DISCOURAGE_UPGRADABLE_PUBKEYTYPE,
+                "BIP448" | "TEMPLATEHASH" => Self::BIP448,
                 unknown => {
                     return Err(ScriptError::UnknownFlag {
                         name: unknown.to_owned(),
@@ -625,6 +630,10 @@ fn verify_taproot(
     }
 }
 
+fn control_internal_key(control: &[u8]) -> Option<[u8; 32]> {
+    <[u8; 32]>::try_from(control.get(1..33)?).ok()
+}
+
 fn strip_annex(stack: &mut Vec<Vec<u8>>) -> Option<Vec<u8>> {
     if stack.len() < 2 {
         return None;
@@ -672,6 +681,12 @@ fn verify_taproot_scriptpath(
         return Ok(());
     }
 
+    let flags = if crate::bip448::regtest_activation() {
+        flags.union(VerifyFlags::BIP448)
+    } else {
+        flags
+    };
+
     if eval::tapscript_op_success(&script, flags)? {
         return Ok(());
     }
@@ -700,6 +715,7 @@ fn verify_taproot_scriptpath(
     );
 
     checker.set_annex(annex_bytes);
+    checker.set_internal_key(control_internal_key(&control));
 
     eval::eval_script(
         &mut witness_stack,

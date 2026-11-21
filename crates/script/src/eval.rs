@@ -4,6 +4,7 @@ use bitcoin_rs_primitives::{CODESEPARATOR_POSITION, Hash256};
 use sha2::Digest as _;
 use smallvec::SmallVec;
 
+use crate::bip448::is_bip448_opcode;
 use crate::checker::{SigVersion, TxSignatureChecker};
 use crate::interpreter::{ScriptErrCode, ScriptError, VerifyFlags};
 use crate::script::{Instruction, instructions, minimal_push, opcode, push_data};
@@ -166,7 +167,7 @@ pub(crate) fn tapscript_op_success(script: &[u8], flags: VerifyFlags) -> Result<
                 });
             }
         };
-        if is_op_success(op) {
+        if is_op_success(op) && !(flags.contains(VerifyFlags::BIP448) && is_bip448_opcode(op)) {
             if flags.contains(VerifyFlags::DISCOURAGE_OP_SUCCESS) {
                 return Err(ScriptError::Invalid {
                     code: ScriptErrCode::DiscourageOpSuccess,
@@ -744,6 +745,57 @@ fn dispatch(
             let bytes = item_bytes(&top).into_owned();
             let digest = hash_bytes(op, &bytes);
             push_bytes(stack, &digest)?;
+        }
+        crate::bip448::OP_TEMPLATEHASH
+            if sigversion == SigVersion::Tapscript && flags.contains(VerifyFlags::BIP448) =>
+        {
+            let hash = checker.template_hash()?;
+            push_bytes(stack, &hash)?;
+        }
+        crate::bip448::OP_INTERNALKEY
+            if sigversion == SigVersion::Tapscript && flags.contains(VerifyFlags::BIP448) =>
+        {
+            let key = checker.internal_key().ok_or(ScriptError::Invalid {
+                code: ScriptErrCode::BadOpcode,
+            })?;
+            push_bytes(stack, &key)?;
+        }
+        crate::bip448::OP_CHECKSIGFROMSTACK
+            if sigversion == SigVersion::Tapscript && flags.contains(VerifyFlags::BIP448) =>
+        {
+            let pubkey = stack.pop().map_err(|_| invalid_stack())?;
+            let message = stack.pop().map_err(|_| invalid_stack())?;
+            let sig = stack.pop().map_err(|_| invalid_stack())?;
+            let sig = item_bytes(&sig);
+            let pubkey = item_bytes(&pubkey);
+            let message = item_bytes(&message);
+            if pubkey.is_empty() {
+                return Err(ScriptError::Invalid {
+                    code: ScriptErrCode::TapscriptEmptyPubkey,
+                });
+            }
+            if !sig.is_empty() {
+                if let Some(left) = validation_weight_left.as_mut() {
+                    *left -= VALIDATION_WEIGHT_PER_SIGOP_PASSED;
+                    if *left < 0 {
+                        return Err(ScriptError::Invalid {
+                            code: ScriptErrCode::TapscriptValidationWeight,
+                        });
+                    }
+                }
+            }
+            if pubkey.len() == 32 {
+                if !sig.is_empty() && !checker.check_schnorr_message(&sig, &pubkey, &message)? {
+                    return Err(ScriptError::Invalid {
+                        code: ScriptErrCode::SchnorrSig,
+                    });
+                }
+            } else if flags.contains(VerifyFlags::DISCOURAGE_UPGRADABLE_PUBKEYTYPE) {
+                return Err(ScriptError::Invalid {
+                    code: ScriptErrCode::DiscourageUpgradablePubkeyType,
+                });
+            }
+            push_bytes(stack, if sig.is_empty() { &[] } else { &[1] })?;
         }
         OP_CODESEPARATOR => {
             code_separator.opcode_pos = opcode_pos;

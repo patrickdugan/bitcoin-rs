@@ -1,4 +1,5 @@
 mod adversarial_limits;
+mod bip448;
 mod core_vectors;
 mod ecdsa_encoding_order;
 mod proptest;

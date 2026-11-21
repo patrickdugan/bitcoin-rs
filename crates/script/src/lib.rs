@@ -1,5 +1,6 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+mod bip448;
 mod checker;
 mod eval;
 mod interpreter;
@@ -9,6 +10,10 @@ pub mod sigops;
 mod stack;
 mod taproot;
 
+pub use bip448::{
+    OP_CHECKSIGFROMSTACK, OP_INTERNALKEY, OP_TEMPLATEHASH, is_bip448_opcode, regtest_activation,
+    set_regtest_activation,
+};
 pub use checker::check_signature_encoding;
 pub use eval::{MAX_SCRIPT_SIZE, is_op_success};
 pub use interpreter::{

@@ -53,7 +53,13 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
     let import = (cli.corpus.clone(), cli.manifest.clone(), cli.state.clone());
-    let result = config::resolve(cli, std::env::vars_os()).and_then(|config| match import {
+    let bip448 = cli.bip448;
+    let result = config::resolve(cli, std::env::vars_os()).and_then(|config| {
+        if bip448 {
+            bitcoin_rs_consensus::bip448::activate_bip448(config.network)?;
+        }
+        Ok(config)
+    }).and_then(|config| match import {
         (Some(corpus), Some(manifest), Some(state)) => {
             bitcoin_rs_node::offline_import::run_offline_import(config, &corpus, &manifest, &state)
                 .map_err(BinError::from)

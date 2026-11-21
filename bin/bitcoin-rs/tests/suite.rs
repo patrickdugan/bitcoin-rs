@@ -1,4 +1,5 @@
 mod addrman_restart_e2e;
+mod bip448_regtest_e2e;
 mod block_inputs;
 mod cli_process;
 mod compact_blocks_e2e;
