@@ -33,7 +33,12 @@ mod tests {
 
     #[test]
     fn only_regtest_may_activate() {
-        for network in [Network::Mainnet, Network::Testnet3, Network::Testnet4, Network::Signet] {
+        for network in [
+            Network::Mainnet,
+            Network::Testnet3,
+            Network::Testnet4,
+            Network::Signet,
+        ] {
             assert_eq!(
                 activate_bip448(network),
                 Err(Bip448ActivationError { network })

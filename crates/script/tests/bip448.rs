@@ -263,16 +263,24 @@ fn templatehash_matches_the_bip_preimage() {
         f(&mut other);
         run_input(&other, &spk, 0, ON)
     };
-    assert!(is_eval_false(&mutate(&|t| t.version = bitcoin::transaction::Version(3))));
+    assert!(is_eval_false(&mutate(
+        &|t| t.version = bitcoin::transaction::Version(3)
+    )));
     assert!(is_eval_false(&mutate(&|t| {
         t.lock_time = bitcoin::absolute::LockTime::from_height(7).expect("height");
     })));
-    assert!(is_eval_false(&mutate(&|t| t.input[0].sequence = Sequence(0xffff_fffe))));
-    assert!(is_eval_false(&mutate(&|t| t.output[0].value = Amount::from_sat(98_999))));
+    assert!(is_eval_false(&mutate(
+        &|t| t.input[0].sequence = Sequence(0xffff_fffe)
+    )));
+    assert!(is_eval_false(&mutate(
+        &|t| t.output[0].value = Amount::from_sat(98_999)
+    )));
     assert!(is_eval_false(&mutate(&|t| {
         t.output[0].script_pubkey = ScriptBuf::from_bytes(vec![0x00]);
     })));
-    assert!(is_eval_false(&mutate(&|t| t.output.push(t.output[0].clone()))));
+    assert!(is_eval_false(&mutate(&|t| t
+        .output
+        .push(t.output[0].clone()))));
     assert_eq!(
         mutate(&|t| {
             t.input[0].previous_output =
@@ -319,7 +327,10 @@ fn templatehash_commits_to_the_annex() {
     witness.push([0x50_u8, 9]);
     other_annex.input[0].witness = witness;
     assert!(is_eval_false(&run_input(&other_annex, &spk, 0, ON)));
-    assert_ne!(template_hash(&tx, 0, None), template_hash(&tx, 0, Some(&annex)));
+    assert_ne!(
+        template_hash(&tx, 0, None),
+        template_hash(&tx, 0, Some(&annex))
+    );
 }
 
 fn csfs_script() -> ScriptBuf {
@@ -340,7 +351,10 @@ fn csfs_accepts_a_valid_signature_and_pushes_one() {
     let sig = sign(&kp, msg);
     let items = [sig, msg.to_vec(), xonly.serialize().to_vec()];
     assert_eq!(spend_leaf(&csfs_script(), &items, xonly, ON), Ok(true));
-    assert_eq!(spend_leaf(&csfs_script(), &items, xonly, ON_STANDARD), Ok(true));
+    assert_eq!(
+        spend_leaf(&csfs_script(), &items, xonly, ON_STANDARD),
+        Ok(true)
+    );
     let eq_one = Builder::new()
         .push_opcode(op(0xcc))
         .push_slice([1_u8])
@@ -398,7 +412,12 @@ fn csfs_empty_signature_pushes_an_empty_vector() {
         .push_opcode(OP_EQUAL)
         .into_script();
     assert_eq!(spend_leaf(&script, &items, xonly, ON), Ok(true));
-    assert!(is_eval_false(&spend_leaf(&csfs_script(), &items, xonly, ON)));
+    assert!(is_eval_false(&spend_leaf(
+        &csfs_script(),
+        &items,
+        xonly,
+        ON
+    )));
 }
 
 #[test]
@@ -487,7 +506,12 @@ fn csfs_through_the_interpreter_matches_bip340_vectors() {
         let sig = Vec::from_hex(cols[5]).expect("sig");
         let expected = cols[6] == "TRUE";
         let result = spend_leaf(&csfs_script(), &[sig, msg.clone(), pk], xonly, ON);
-        assert_eq!(result == Ok(true), expected, "vector {}: {result:?}", cols[0]);
+        assert_eq!(
+            result == Ok(true),
+            expected,
+            "vector {}: {result:?}",
+            cols[0]
+        );
         lengths.insert(msg.len());
         count += 1;
     }
@@ -517,7 +541,11 @@ fn rebindable_signature_template_internalkey_csfs() {
     let mut rebound = tx.clone();
     rebound.input[0].previous_output =
         bitcoin::OutPoint::new(bitcoin::Txid::from_byte_array([55; 32]), 3);
-    assert_eq!(run_input(&rebound, &spk, 0, ON), Ok(true), "rebinds to a new outpoint");
+    assert_eq!(
+        run_input(&rebound, &spk, 0, ON),
+        Ok(true),
+        "rebinds to a new outpoint"
+    );
 
     let mut tampered = tx.clone();
     tampered.output[0].value = Amount::from_sat(1);
