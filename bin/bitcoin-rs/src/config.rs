@@ -51,6 +51,8 @@ pub(crate) enum BinError {
     InvalidBitcoinConf { details: String },
     #[error("--corpus, --manifest, and --state must be given together")]
     IncompleteOfflineImportArguments,
+    #[error(transparent)]
+    Bip448(#[from] bitcoin_rs_consensus::bip448::Bip448ActivationError),
 }
 
 macro_rules! emit_cli {
@@ -100,6 +102,10 @@ macro_rules! emit_cli {
             pub(crate) manifest: Option<PathBuf>,
             #[arg(long, help = "Directory for offline-import certification state")]
             pub(crate) state: Option<PathBuf>,
+            /// Regtest only: define OP_TEMPLATEHASH, OP_CHECKSIGFROMSTACK and
+            /// OP_INTERNALKEY (BIP 448) instead of leaving them OP_SUCCESS.
+            #[arg(long)]
+            pub(crate) bip448: bool,
             $(
                 $(#[$fdoc])*
                 $($fcli)*

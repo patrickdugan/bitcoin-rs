@@ -273,6 +273,7 @@ dependencies = [
  "bitcoin-rs-chainstate",
  "bitcoin-rs-consensus",
  "bitcoin-rs-e2e",
+ "bitcoin-rs-nested-musig2",
  "bitcoin-rs-node",
  "bitcoin-rs-primitives",
  "bitcoin-rs-rpc",
